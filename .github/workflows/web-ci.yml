@@ -1,0 +1,18 @@
+# Sightline — Web CI
+# Placeholder. Workflows defined in Phase 3 (frontend scaffolding).
+name: Web CI
+
+on:
+  push:
+    paths:
+      - "web/**"
+  pull_request:
+    paths:
+      - "web/**"
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Web CI placeholder — implement in Phase 3"

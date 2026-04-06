@@ -1,0 +1,18 @@
+# Sightline — Infrastructure Plan
+# Placeholder. Full Terraform plan workflow defined in Phase 1 (IaC scaffolding).
+name: Infra Plan
+
+on:
+  push:
+    paths:
+      - "infra/**"
+  pull_request:
+    paths:
+      - "infra/**"
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Infra plan placeholder — implement in Phase 1 IaC work"
