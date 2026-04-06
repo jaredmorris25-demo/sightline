@@ -296,13 +296,16 @@ All Azure resources have Terraform definitions before they are provisioned.
 ## Current State (update this block each session)
 
 **Last updated:** 2026-04-06
-**Completed:** Repo scaffold, Docker Compose, FastAPI skeleton, /health and /ready endpoints
-**In progress:** Phase 1 — Terraform bootstrap
+**Current phase:** Phase 1 complete — moving to Phase 2
+**Completed:** Repo scaffold, Docker Compose, FastAPI skeleton with 
+  health/ready endpoints, Terraform bootstrap with Azure remote state
+**In progress:** Nothing
 **Next actions:**
-  1. Azure CLI login and create resource group manually
-  2. Create storage account for Terraform state backend
-  3. Configure infra/main.tf backend block
-  4. terraform init, plan, apply
+  1. Design database schema and SQLAlchemy models (User, Species, Sighting, 
+     Group, Location, Media, IngestRecord)
+  2. First Alembic migration
+  3. Seed species data from GBIF or ALA
+  4. Auth0 setup and JWT middleware
 
 ---
 
