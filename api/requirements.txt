@@ -4,6 +4,7 @@ pydantic-settings
 asyncpg
 sqlalchemy[asyncio]
 psycopg2-binary
+geoalchemy2
 alembic
 python-jose[cryptography]
 httpx
