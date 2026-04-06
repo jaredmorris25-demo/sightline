@@ -388,6 +388,10 @@ All Azure resources have Terraform definitions before they are provisioned.
 - Media.observed_at_device comes from EXIF and must never be overwritten after creation
 - Sighting.observed_at should be populated from Media.observed_at_device where available
 - When uncertain, add to Open Questions below and flag in your response
+- Alembic is configured in /db/ not /api/ — run alembic commands from the db/ directory
+- When making a significant technical decision during a session, create a draft 
+  ADR in /docs/adr/ and flag it in your response for owner review. Do not mark 
+  it Accepted — mark it Draft. Owner reviews and accepts in Claude.ai.
 
 ---
 

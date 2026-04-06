@@ -1,42 +1,32 @@
-# ADR-001: Auth Provider Selection
+# ADR-001 — Auth provider
 
-**Date:** TBD
-**Status:** Proposed
-
----
+**Date:** 2026-04-07
+**Status:** Pending — decision required before Phase 2 auth implementation
 
 ## Context
+Sightline requires authentication for all write endpoints and user identity
+management. Two primary candidates evaluated: Auth0 and Azure AD B2C.
 
-Sightline requires authentication and authorisation for all non-public API endpoints.
-Key requirements: OAuth2/OIDC, social login (Google, Apple), JWT issuance, multi-tenancy
-awareness, developer experience, and cost at low user volumes.
+## Options under consideration
 
-Primary candidates: Auth0, Azure AD B2C.
+**Auth0**
+- Purpose-built auth platform, excellent developer experience
+- FastAPI quickstart documentation is comprehensive
+- Social login (Google, Apple) straightforward to configure
+- Free tier: 7,500 monthly active users
+- Slight vendor lock-in outside Azure ecosystem
 
----
+**Azure AD B2C**
+- Native Azure integration, consistent with overall cloud strategy
+- More complex initial setup and documentation
+- Social login supported but more configuration required
+- Pricing based on monthly active users, competitive at scale
+- Stays entirely within Azure — simpler managed identity story
 
 ## Decision
+Pending. Resolve before writing auth middleware in Phase 2.
 
-TBD — see Open Questions in CLAUDE.md.
-
----
-
-## Rationale
-
-TBD
-
----
-
-## Alternatives Rejected
-
-| Alternative | Why rejected |
-|---|---|
-| Azure AD B2C | TBD |
-| Auth0 | TBD |
-| Roll-your-own (FastAPI + OAuth2) | Too much undifferentiated work at Phase 1 |
-
----
-
-## Consequences
-
-TBD
+## Notes
+Lean toward Auth0 for developer experience and faster Phase 2 progress.
+Revisit Azure AD B2C if Azure-native integration becomes a priority in
+later phases.
