@@ -1,6 +1,3 @@
-# Sightline — Terraform root module
-# Placeholder. Infrastructure defined in Phase 1 (IaC scaffolding).
-
 terraform {
   required_version = ">= 1.6"
   required_providers {
@@ -9,8 +6,12 @@ terraform {
       version = "~> 3.0"
     }
   }
-  # Remote state backend — configured per environment
-  # backend "azurerm" {}
+  backend "azurerm" {
+    resource_group_name  = "rg-sightline"
+    storage_account_name = "stsightlinetfstate"
+    container_name       = "tfstate"
+    key                  = "dev.terraform.tfstate"
+  }
 }
 
 provider "azurerm" {

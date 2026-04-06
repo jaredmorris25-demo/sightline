@@ -8,7 +8,6 @@
 
 ## What is Sightline?
 
-Sightline is a field observation platform where anyone can log sightings of wildlife,
 flora, fungi, and natural phenomena. Think iNaturalist, but built from scratch as a
 learning vehicle for full-stack software engineering on Azure.
 
@@ -92,6 +91,7 @@ These are non-negotiable and must be respected in all code and architecture deci
 | Mobile (Phase 6) | React Native / Expo | Same API, no backend changes needed |
 | Containers | Docker + Docker Compose | Local dev; prod on Azure Container Apps |
 | IaC | Terraform (AzureRM provider) | State in Azure Blob Storage |
+Sightline is a field observation platform where anyone can log sightings of wildlife,
 | CI/CD | GitHub Actions | lint → test → build → deploy per environment |
 | Secrets | Azure Key Vault | Referenced by Container Apps via managed identity |
 | Async / events | Azure Service Bus | Media processing pipeline |
@@ -296,18 +296,13 @@ All Azure resources have Terraform definitions before they are provisioned.
 ## Current State (update this block each session)
 
 **Last updated:** 2026-04-06
-**Current phase:** Phase 1 — Foundation
-**In progress:** Initial repo scaffold
-**Completed:** Project brief, stack decisions, CLAUDE.md v2, Group entity design
-**Blocked by:** Nothing
+**Completed:** Repo scaffold, Docker Compose, FastAPI skeleton, /health and /ready endpoints
+**In progress:** Phase 1 — Terraform bootstrap
 **Next actions:**
-  1. Clone freshly created GitHub repo in VSCode
-  2. Run Claude Code scaffold prompt to create folder structure and placeholder files
-  3. Initialise docker-compose.yml (postgres/postgis + pgadmin + api skeleton)
-  4. Write first Terraform file (resource group + storage account for TF state backend)
-  5. Skeleton GitHub Actions workflows
-  6. Draft ADR-001 (auth provider) and ADR-002 (monorepo confirmed)
-  7. First DEVLOG entry
+  1. Azure CLI login and create resource group manually
+  2. Create storage account for Terraform state backend
+  3. Configure infra/main.tf backend block
+  4. terraform init, plan, apply
 
 ---
 
@@ -338,6 +333,7 @@ All Azure resources have Terraform definitions before they are provisioned.
 
 ---
 
+- Heatmaps and time-series charts on web frontend
 ## Backlog / Future Ideas
 
 Do not build until the relevant phase is reached. Additive, not foundational.
@@ -348,7 +344,6 @@ Do not build until the relevant phase is reached. Additive, not foundational.
 - Offline-first mobile: draft sightings locally, sync when online
 - Public Darwin Core Archive export (GBIF-compatible bulk download)
 - Databricks pipeline consuming sightings stream for population trend analytics
-- Heatmaps and time-series charts on web frontend
 - Push notifications for rare species sighted near user's home location
 - Organisation accounts with bulk ingest API key access
 - Two-way sync with eBird, iNaturalist, ALA
