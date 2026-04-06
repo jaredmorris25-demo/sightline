@@ -430,4 +430,4 @@ Do not build until the relevant phase is reached. Additive, not foundational.
 - [ ] Map provider — Mapbox vs Azure Maps vs Leaflet/OSM (resolve before Phase 3)
 - [ ] Species taxonomy seed strategy — GBIF bulk download vs ALA API vs iNaturalist
 - [ ] Domain name — check sightline.app / sightline.io availability
-- [ ] API versioning — URI (/v1/) vs header-based — decide before first public endpoint
+- [x] API versioning — URI (/v1/), no trailing slash. Unversioned ops endpoints. See ADR-004.

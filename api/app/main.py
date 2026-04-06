@@ -20,8 +20,15 @@ app.add_middleware(
 )
 
 # --- Domain routers registered here as they are built ---
+# All domain endpoints use URI versioning prefix /v1/
+# Ops endpoints (/health, /ready) are intentionally unversioned
 # from app.routers import sightings, species, locations, groups, users, ingest
 # app.include_router(sightings.router, prefix="/v1/sightings", tags=["sightings"])
+# app.include_router(species.router, prefix="/v1/species", tags=["species"])
+# app.include_router(locations.router, prefix="/v1/locations", tags=["locations"])
+# app.include_router(groups.router, prefix="/v1/groups", tags=["groups"])
+# app.include_router(users.router, prefix="/v1/users", tags=["users"])
+# app.include_router(ingest.router, prefix="/v1/ingest", tags=["ingest"])
 
 
 @app.get("/health", tags=["ops"])
