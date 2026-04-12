@@ -5,6 +5,28 @@ Format: `## YYYY-MM-DD — Summary`
 
 ---
 
+## 2026-04-12 — Species and sightings endpoints, tests, spatial query
+
+### Completed
+- Species endpoints: GET /v1/species/, GET /v1/species/search, GET /v1/species/{id},
+  POST /v1/species/ — all wired via species_service.py
+- Sightings endpoints: GET /v1/sightings/, GET /v1/sightings/nearby,
+  GET /v1/sightings/{id}, POST /v1/sightings/ — wired via sighting_service.py
+- Spatial query: ST_DWithin with geography cast for accurate metre-based radius,
+  ordered by ST_Distance. PostGIS longitude-first argument order enforced in comments.
+- Transactional rollback test fixture in api/tests/conftest.py — each test runs
+  inside a transaction that rolls back on teardown, no data written to DB
+- 3 species tests passing (list, search, create)
+- Pydantic class-based Config replaced with SettingsConfigDict — deprecation
+  warning eliminated
+
+### Bugs caught and fixed
+- Missing func. wrapper on ST_MakePoint in get_nearby_sightings
+- Missing func. wrapper on ST_DWithin in get_nearby_sightings
+- Pydantic v2 class-based config deprecation in api/app/config.py
+
+---
+
 ## 2026-04-12 — Pydantic schemas for all 8 entities
 
 ### Completed
