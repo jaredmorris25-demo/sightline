@@ -5,6 +5,31 @@ Format: `## YYYY-MM-DD — Summary`
 
 ---
 
+## 2026-04-12 — Pydantic schemas for all 8 entities
+
+### Completed
+- Pydantic schemas created for all 8 entities: User, Species, Group,
+  GroupMembership, Location, Sighting, Media, IngestRecord
+- PaginatedResponse[T] generic envelope in schemas/common.py — used by all
+  list endpoints
+
+### Notable decisions
+- DwC aliasing on Species: class_name/order_name use alias="class"/"order" with
+  populate_by_name=True so JSON API uses correct Darwin Core field names while
+  Python avoids reserved keywords
+- UserPublic vs UserRead split: UserRead includes email (auth'd self-view only);
+  UserPublic strips it for safe embedding in sighting and group responses
+- SightingDetail vs SightingRead: list endpoints return SightingRead (flat);
+  detail endpoint returns SightingDetail with embedded SpeciesSummary and
+  UserPublic to avoid N+1 pressure on list queries
+- blob_url excluded from MediaRead — only cdn_url exposed; internal Azure Blob
+  Storage URLs stay server-side
+- SightingCreate.observed_at validator: rejects naive datetimes explicitly,
+  compares against datetime.now(timezone.utc) — no dependence on server timezone
+  or client-supplied tzinfo
+
+---
+
 ## 2026-04-07 — SQLAlchemy models and initial Alembic migration
 
 ### Completed
