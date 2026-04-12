@@ -81,6 +81,10 @@ These are non-negotiable and must be respected in all code and architecture deci
     What was built, what broke, what was fixed, what was deferred. Future Claude Code
     sessions should read recent DEVLOG entries to understand current state.
 
+13. **Idempotent writes.** All seed scripts, ingest pipelines, and bulk operations 
+    must be safe to re-run. Use INSERT ... ON CONFLICT DO NOTHING or equivalent 
+    upsert patterns. Never assume a write operation hasn't already run.
+
 ---
 
 ## Tech Stack
@@ -249,8 +253,8 @@ DwC: locationID, locality, stateProvince, country,
      decimalLatitude, decimalLongitude, geodeticDatum
 
 ### Media
-Photos, audio, video attached to sightings.
 Device timestamp and GPS are source of truth — see ADR-003 and Principle 5.
+Photos, audio, video attached to sightings.
 Fields: id (uuid), sighting_id (nullable — null = draft), user_id,
 status (draft|attached|processing|ready), blob_url, cdn_url,
 media_type (photo|audio|video), file_size, mime_type,
@@ -392,6 +396,8 @@ All Azure resources have Terraform definitions before they are provisioned.
 - When making a significant technical decision during a session, create a draft 
   ADR in /docs/adr/ and flag it in your response for owner review. Do not mark 
   it Accepted — mark it Draft. Owner reviews and accepts in Claude.ai.
+- All seed scripts and bulk inserts must use upsert patterns (ON CONFLICT DO NOTHING 
+  or DO UPDATE) — never plain INSERT in any script that could be run more than once
 
 ---
 
