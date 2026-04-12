@@ -5,6 +5,29 @@ Format: `## YYYY-MM-DD — Summary`
 
 ---
 
+## 2026-04-12 — Species seed script — 255 Australian species from ALA
+
+### Completed
+- db/seed/seed_species.py: fetches Australian species from ALA API across 6
+  groups, 255 records seeded:
+  - Birds: 50
+  - Mammals: 50
+  - Reptiles: 50
+  - Amphibians: 50
+  - Fungi: 50
+  - Vascular plants: 5 (45 records skipped — missing scientificName in ALA
+    response, upstream data quality issue, not a script bug)
+- Idempotent via INSERT ... ON CONFLICT (scientific_name) DO NOTHING — confirmed
+  working: re-run skips all 250 existing records cleanly, inserts only new ones
+- class/order columns confirmed populated in DB after field mapping fix
+
+### Bugs caught and fixed
+- Initial mapping used record.get('classs') — corrected to record.get('class')
+- ALA group name 'Plants' returns 0 results — fixed to 'Vascular plants'
+  (confirmed via API probe: totalRecords=165)
+
+---
+
 ## 2026-04-12 — Species and sightings endpoints, tests, spatial query
 
 ### Completed

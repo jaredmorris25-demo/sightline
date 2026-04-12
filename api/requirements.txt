@@ -7,6 +7,7 @@ psycopg2-binary
 geoalchemy2
 alembic
 python-jose[cryptography]
+requests
 httpx
 pytest
 pytest-asyncio
