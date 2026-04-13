@@ -6,27 +6,17 @@ with the database dependency overridden. Each test runs inside a transaction
 that is rolled back on teardown — no data is ever committed to the database.
 """
 
-import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 
 from app.config import settings
 from app.db.session import get_db
 from app.main import app
 
-# Separate engine for tests — same DATABASE_URL, NullPool so connections are
-# not reused between tests.
-from sqlalchemy.pool import NullPool
-
+# Separate engine for tests — NullPool so connections are not reused between tests.
 _test_engine = create_async_engine(settings.database_url, poolclass=NullPool)
-
-_TestSessionLocal = sessionmaker(
-    bind=_test_engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-)
 
 
 @pytest_asyncio.fixture()

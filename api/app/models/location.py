@@ -15,7 +15,7 @@ import enum
 
 from geoalchemy2 import Geometry
 from sqlalchemy import Enum, Index, String, Text
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
 from app.models.base import UUIDMixin

@@ -1,8 +1,6 @@
 import enum
-import uuid
 
 from sqlalchemy import Enum, Index, String, Text
-from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
