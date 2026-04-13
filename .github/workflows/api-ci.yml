@@ -1,18 +1,78 @@
-# Sightline — API CI
-# Placeholder. Workflows defined in Phase 1 (IaC/CI scaffolding).
 name: API CI
 
 on:
   push:
+    branches: [main, develop]
     paths:
       - "api/**"
+      - ".github/workflows/api-ci.yml"
   pull_request:
+    branches: [main, develop]
     paths:
       - "api/**"
+      - ".github/workflows/api-ci.yml"
 
 jobs:
-  placeholder:
+  test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: sightline
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: sightline_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sightline -d sightline_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
-      - run: echo "API CI placeholder — implement in Phase 2"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ hashFiles('api/requirements.txt') }}
+          restore-keys: pip-
+
+      - name: Install dependencies
+        run: pip install -r api/requirements.txt
+
+      - name: Run Alembic migrations
+        working-directory: db
+        env:
+          DATABASE_URL_SYNC: postgresql://sightline:testpass@localhost:5432/sightline_test
+        run: alembic upgrade head
+
+      - name: Run pytest
+        working-directory: api
+        env:
+          DATABASE_URL: postgresql+asyncpg://sightline:testpass@localhost:5432/sightline_test
+          ENVIRONMENT: test
+        run: pytest tests/ -v
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Lint with ruff
+        run: ruff check api/
