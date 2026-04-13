@@ -59,6 +59,7 @@ jobs:
         env:
           DATABASE_URL: postgresql+asyncpg://sightline:testpass@localhost:5432/sightline_test
           ENVIRONMENT: test
+          PYTHONPATH: .
         run: pytest tests/ -v
 
   lint:
