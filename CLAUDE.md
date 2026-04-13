@@ -398,6 +398,10 @@ All Azure resources have Terraform definitions before they are provisioned.
   it Accepted — mark it Draft. Owner reviews and accepts in Claude.ai.
 - All seed scripts and bulk inserts must use upsert patterns (ON CONFLICT DO NOTHING 
   or DO UPDATE) — never plain INSERT in any script that could be run more than once
+- PostGIS autogenerate capturing system tables — fixed with include_object filter
+- func. wrapper required on all PostGIS SQLAlchemy calls
+- ALA data quality issues handled gracefully by skip logic
+- CI needs explicit PYTHONPATH when running outside Docker
 
 ---
 
@@ -427,6 +431,9 @@ Do not build until the relevant phase is reached. Additive, not foundational.
 - Organisation accounts with bulk ingest API key access (Phase 4+)
 - Two-way sync with ALA, eBird, iNaturalist (Phase 4+)
 - Moderation queue for curator role (Phase 3+)
+- Seed script: Plants group returns 0 from ALA with speciesGroup:Plants filter. Investigate correct ALA group name — likely Angiosperms or Vascular plants. Re-run seed once fixed.
+- ALA response also returns thumbnailUrl, imageUrl, and occurrenceCount. We don't capture those right now but they're genuinely useful — a species thumbnail from ALA would make the web frontend much richer without us managing any images. Worth adding thumbnail_url and occurrence_count fields to the Species model in a future migration.
+- Species seed: Vascular plants returns poor data quality from ALA search API — 45/50 records missing scientificName. Investigate ALA species bulk download or alternative endpoint for better plant coverage. Consider GBIF as alternative source for plant taxonomy.
 
 ---
 
