@@ -5,6 +5,24 @@ Format: `## YYYY-MM-DD — Summary`
 
 ---
 
+## 2026-04-13 — Phase 2 complete — GitHub Actions CI green
+
+### Completed
+- GitHub Actions CI fully passing: lint (ruff) and test (pytest) jobs both green
+- Phase 2 all items complete — SQLAlchemy models, Alembic migration, Pydantic
+  schemas, species and sightings endpoints, species seed script, CI pipeline
+
+### Bugs caught and fixed
+- ruff: 6 unused imports removed across api/app/models/location.py,
+  api/app/models/user.py, api/app/schemas/user.py, api/tests/conftest.py,
+  api/tests/test_health.py
+- pytest exit code 4 (no tests collected in CI): added api/pytest.ini with
+  asyncio_mode = auto and testpaths = tests
+- ModuleNotFoundError: No module named 'app' in CI runner: added PYTHONPATH: .
+  to the Run pytest step in .github/workflows/api-ci.yml
+
+---
+
 ## 2026-04-12 — Species seed script — 255 Australian species from ALA
 
 ### Completed
