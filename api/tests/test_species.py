@@ -21,13 +21,13 @@ async def test_search_species_returns_200(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_create_species_returns_201(client: AsyncClient):
+async def test_create_species_returns_201(authenticated_client: AsyncClient):
     payload = {
         "scientific_name": "Testus speciesus",
         "common_name": "Test Species",
         "kingdom": "Animalia",
     }
-    response = await client.post("/v1/species/", json=payload)
+    response = await authenticated_client.post("/v1/species/", json=payload)
     assert response.status_code == 201
     body = response.json()
     assert body["scientific_name"] == "Testus speciesus"

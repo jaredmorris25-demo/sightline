@@ -3,6 +3,7 @@ import uuid
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.user_context import get_current_user_id
 from app.db.session import get_db
 from app.schemas.common import PaginatedResponse
 from app.schemas.species import SpeciesCreate, SpeciesRead, SpeciesSummary
@@ -50,5 +51,6 @@ async def get_species(
 async def create_species(
     payload: SpeciesCreate,
     db: AsyncSession = Depends(get_db),
+    _user_id: str = Depends(get_current_user_id),
 ):
     return await species_service.create_species(db, payload)

@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     auth0_api_audience: str = ""
     auth0_client_id: str = ""
     auth0_client_secret: str = ""
+    auth0_algorithms: list[str] = ["RS256"]
 
     # Azure Storage
     azure_storage_account_name: str = ""

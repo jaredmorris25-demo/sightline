@@ -3,16 +3,13 @@ import uuid
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.user_context import get_current_user_id
 from app.db.session import get_db
 from app.schemas.common import PaginatedResponse
 from app.schemas.sighting import SightingCreate, SightingDetail, SightingRead
 from app.services import sighting_service
 
 router = APIRouter()
-
-# Placeholder user_id used until auth is wired in Phase 3.
-# Will be replaced with: user_id = Depends(get_current_user)
-_PLACEHOLDER_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
 
 
 @router.get("/", response_model=PaginatedResponse[SightingRead])
@@ -61,9 +58,10 @@ async def get_sighting(
 async def create_sighting(
     payload: SightingCreate,
     db: AsyncSession = Depends(get_db),
+    user_id: uuid.UUID = Depends(get_current_user_id),
 ):
     return await sighting_service.create_sighting(
         db,
         payload,
-        user_id=_PLACEHOLDER_USER_ID,
+        user_id=user_id,
     )

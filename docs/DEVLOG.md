@@ -5,6 +5,31 @@ Format: `## YYYY-MM-DD — Summary`
 
 ---
 
+## 2026-04-14 — Auth0 JWT middleware and get_or_create_user
+
+### Completed
+- api/app/auth/dependencies.py: get_current_user dependency validates RS256
+  Bearer tokens against Auth0 JWKS; 24-hour in-memory JWKS cache; raises
+  HTTP 401 for missing/expired/invalid tokens
+- api/app/auth/user_context.py: get_current_db_user resolves token payload to
+  internal User ORM object; get_current_user_id returns User.id (uuid.UUID)
+- api/app/services/user_service.py: get_or_create_user — looks up User by
+  auth_provider_id, creates new observer-role User on first login; uses
+  flush() not commit() to stay within the request transaction
+- POST /v1/sightings/ and POST /v1/species/ now require a valid Auth0 token;
+  GET endpoints remain public
+- api/tests/conftest.py: authenticated_client fixture overrides both get_db
+  (transactional rollback) and get_current_user (fake payload) for testing
+  authenticated endpoints without a real token
+- test_create_species_returns_201 updated to use authenticated_client
+
+### Bugs caught and fixed
+- Auth0 sub claims are strings like "auth0|64abc..." not UUIDs — original
+  uuid.UUID(user_id) cast would have raised ValueError at runtime; fixed by
+  looking up/creating the internal User record and returning User.id instead
+
+---
+
 ## 2026-04-13 — Phase 2 complete — GitHub Actions CI green
 
 ### Completed
