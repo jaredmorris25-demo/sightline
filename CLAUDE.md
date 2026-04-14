@@ -439,7 +439,7 @@ Do not build until the relevant phase is reached. Additive, not foundational.
 
 ## Open Questions
 
-- [ ] Auth0 vs Azure AD B2C — cost, social login, developer experience (resolve in Phase 2)
+- [x] Auth0 vs Azure AD B2C — Auth0 selected. Tenant: dev-kr7ljpg5onbkey04.us.auth0.com, Audience: https://api.sightline.app. See ADR-001.
 - [ ] Map provider — Mapbox vs Azure Maps vs Leaflet/OSM (resolve before Phase 3)
 - [ ] Species taxonomy seed strategy — GBIF bulk download vs ALA API vs iNaturalist
 - [ ] Domain name — check sightline.app / sightline.io availability
