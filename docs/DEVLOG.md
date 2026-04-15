@@ -5,6 +5,32 @@ Format: `## YYYY-MM-DD — Summary`
 
 ---
 
+## 2026-04-15 — Full auth flow confirmed end-to-end
+
+### Completed
+- Full Auth0 authentication flow working: JWT validated in FastAPI, user
+  auto-provisioned in DB on first login, 200 from POST /v1/users/me confirmed
+- api/app/routers/users.py: added db.commit() so the flushed User row is
+  actually persisted — without this, flush() wrote to the transaction but
+  never committed, leaving the users table empty
+- api/app/auth/dependencies.py: added logging.warning for JWTError and
+  logging.info for audience/issuer to diagnose 401s
+- web/src/app/layout.tsx: replaced getAccessToken() (wrong v4 API) with
+  session.tokenSet.accessToken — the correct server-side path in Auth0 v4
+- web/src/lib/auth0.ts: Auth0Client configured with audience in
+  authorizationParameters so access tokens are JWT (not opaque) and carry
+  the correct audience claim for FastAPI validation
+- Next.js 16 frontend scaffolded: map page, species browser + detail,
+  Auth0 proxy.ts, typed API client, QueryClientProvider
+
+### Root causes resolved
+- Opaque token: audience not passed in authorizationParameters → Auth0
+  issued opaque tokens that FastAPI couldn't validate; fixed in lib/auth0.ts
+- flush without commit: get_or_create_user called db.flush() but the users
+  router never called db.commit(), so rows were never written to disk
+
+---
+
 ## 2026-04-14 — Auth0 JWT middleware and get_or_create_user
 
 ### Completed

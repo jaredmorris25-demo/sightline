@@ -21,16 +21,16 @@ app.add_middleware(
 
 # --- Domain routers — URI versioning prefix /v1/ (ADR-004) ---
 # Ops endpoints (/health, /ready) are intentionally unversioned
-from app.routers import sightings, species  # noqa: E402
+from app.routers import sightings, species, users  # noqa: E402
 
 app.include_router(species.router, prefix="/v1/species", tags=["species"])
 app.include_router(sightings.router, prefix="/v1/sightings", tags=["sightings"])
+app.include_router(users.router, prefix="/v1/users", tags=["users"])
 
 # Routers added as they are built:
-# from app.routers import locations, groups, users, ingest
+# from app.routers import locations, groups, ingest
 # app.include_router(locations.router, prefix="/v1/locations", tags=["locations"])
 # app.include_router(groups.router, prefix="/v1/groups", tags=["groups"])
-# app.include_router(users.router, prefix="/v1/users", tags=["users"])
 # app.include_router(ingest.router, prefix="/v1/ingest", tags=["ingest"])
 
 

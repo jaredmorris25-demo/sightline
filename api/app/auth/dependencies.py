@@ -6,6 +6,7 @@ fetched once from Auth0 and cached in memory for 24 hours to avoid a network
 round-trip on every request.
 """
 
+import logging
 from datetime import datetime, timedelta, timezone
 
 import httpx
@@ -90,20 +91,26 @@ async def get_current_user(
             detail="Unable to find matching signing key",
         )
 
+    audience = settings.auth0_api_audience
+    issuer = f"https://{settings.auth0_domain}/"
+    logging.info("JWT decode — audience: %s  issuer: %s", audience, issuer)
+
     try:
         payload = jwt.decode(
             token,
             rsa_key,
             algorithms=settings.auth0_algorithms,
-            audience=settings.auth0_api_audience,
-            issuer=f"https://{settings.auth0_domain}/",
+            audience=audience,
+            issuer=issuer,
         )
-    except ExpiredSignatureError:
+    except ExpiredSignatureError as exc:
+        logging.warning("JWT validation failed (expired): %s", exc)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token has expired",
         )
-    except JWTError:
+    except JWTError as exc:
+        logging.warning("JWT validation failed: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token validation failed",

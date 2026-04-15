@@ -1,9 +1,9 @@
-# Sightline — Claude Code Project Context
 
 > This file is read automatically by Claude Code at the start of every session.
 > It is the single source of truth for project context, decisions, and current state.
 > Update it at the end of every session. Do not let it go stale.
 
+# Sightline — Claude Code Project Context
 ---
 
 ## What is Sightline?
@@ -402,6 +402,10 @@ All Azure resources have Terraform definitions before they are provisioned.
 - func. wrapper required on all PostGIS SQLAlchemy calls
 - ALA data quality issues handled gracefully by skip logic
 - CI needs explicit PYTHONPATH when running outside Docker
+- Next.js frontend uses Next.js 16.2.3, Auth0 v4, react-map-gl v8 — these have 
+  breaking changes from v3/earlier docs. Key differences: AUTH0_DOMAIN not 
+  AUTH0_ISSUER_BASE_URL, Auth0Provider not UserProvider, proxy.ts not middleware.ts, 
+  react-map-gl/mapbox subpath required, HomeMap.tsx client wrapper for map component.
 
 ---
 
