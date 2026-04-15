@@ -67,6 +67,11 @@ export default async function RootLayout({
               <a href="/species" className="text-sm text-gray-600 hover:text-green-800">
                 Species
               </a>
+              {session && (
+                <a href="/submit" className="text-sm text-gray-600 hover:text-green-800">
+                  Submit sighting
+                </a>
+              )}
               {session ? (
                 <a
                   href="/auth/logout"

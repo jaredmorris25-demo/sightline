@@ -5,6 +5,31 @@ Format: `## YYYY-MM-DD — Summary`
 
 ---
 
+## 2026-04-15 — Phase 3 complete — submit form, nav updates, end-to-end flow confirmed
+
+### Completed
+- web/src/app/submit/page.tsx: server component — checks session, redirects
+  unauthenticated users to /auth/login, passes accessToken to form
+- web/src/app/submit/SubmitSightingForm.tsx: client component — species search
+  with 300ms debounce + dropdown, datetime-local (capped at now), lat/lng
+  pre-populated from Geolocation API, count, behaviour notes, visibility,
+  location description; posts to /v1/sightings/ with Bearer token; redirects
+  to / on success, shows inline error on failure
+- web/src/app/layout.tsx: "Submit sighting" nav link added, visible only when
+  session is active; placed between Species and Logout
+- web/src/app/page.tsx: removed duplicate Login/Logout overlay from map —
+  auth controls now live only in the nav
+- Full end-to-end flow confirmed: form submission → JWT auth → 201 Created →
+  redirect to map → sighting appears in GET /v1/sightings/ response
+
+### First real sighting recorded
+- Species: Laughing Kookaburra (Dacelo (Dacelo) novaeguineae)
+- Location: Brisbane (-27.4698, 153.0251)
+- Date: 2026-04-15
+- DB id: b1ec161b-9262-4baf-bb80-67cb9ff06319
+
+---
+
 ## 2026-04-15 — Full auth flow confirmed end-to-end
 
 ### Completed
