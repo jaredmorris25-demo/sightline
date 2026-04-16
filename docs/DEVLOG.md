@@ -5,6 +5,37 @@ Format: `## YYYY-MM-DD — Summary`
 
 ---
 
+## 2026-04-16 — Phase 4 Part A complete — Azure infrastructure live
+
+### Completed
+- Terraform modules created: registry, database, keyvault, api
+- infra/environments/dev/main.tf wires all modules; backend state in
+  Azure Blob Storage (stsightlinetfstate, dev.terraform.tfstate)
+- api/Dockerfile.prod: multi-stage linux/amd64 production image,
+  uvicorn --workers 2, no --reload
+- terraform apply: all 10 resources created in australiaeast / rg-sightline
+
+### Azure resources live
+- ACR: acrsightline.azurecr.io
+- PostgreSQL Flexible Server: psql-sightline-dev.postgres.database.azure.com
+  (PostgreSQL 16, B_Standard_B1ms, 32GB, PostGIS extension enabled)
+- Key Vault: kv-sightline-dev.vault.azure.net
+- Container Apps Environment: cae-sightline-dev
+- Container App: ca-sightline-api (0.5 CPU, 1Gi, min 1 / max 3 replicas)
+- Public API URL: https://ca-sightline-api--qk6j3jf.wittywave-8fb8cdba.australiaeast.azurecontainerapps.io
+- Alembic migrations applied to Azure PostgreSQL
+- 255 Australian species seeded from ALA
+
+### Bugs caught and fixed
+- high_availability block does not accept mode="Disabled" in AzureRM 3.x —
+  removed block entirely to disable HA
+- Image pushed as linux/arm64 (Mac M-series default) — Azure Container Apps
+  requires linux/amd64; rebuilt with --platform linux/amd64
+- Container App created in Failed state (no image on first apply) — deleted
+  via az CLI and recreated after amd64 image was pushed
+
+---
+
 ## 2026-04-15 — Phase 3 complete — submit form, nav updates, end-to-end flow confirmed
 
 ### Completed
