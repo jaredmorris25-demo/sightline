@@ -36,7 +36,11 @@ app.include_router(users.router, prefix="/v1/users", tags=["users"])
 
 @app.get("/health", tags=["ops"])
 async def health():
-    return {"status": "ok", "environment": settings.environment}
+    return {
+        "status": "ok",
+        "environment": settings.environment,
+        "version": "0.1.0",
+    }
 
 
 @app.get("/ready", tags=["ops"])
