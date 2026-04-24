@@ -6,6 +6,7 @@ on:
     paths:
       - "api/**"
       - "api/Dockerfile.prod"
+      - ".github/workflows/api-deploy.yml"
 
 jobs:
   test:
