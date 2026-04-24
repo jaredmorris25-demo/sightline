@@ -31,13 +31,20 @@ async def get_sightings_list(
     count_result = await db.execute(select(func.count()).select_from(query.subquery()))
     total = count_result.scalar_one()
 
-    result = await db.execute(
-        query.order_by(Sighting.observed_at.desc()).offset(skip).limit(limit)
+    data_query = query.add_columns(
+        func.ST_Y(Sighting.geometry).label("latitude"),
+        func.ST_X(Sighting.geometry).label("longitude"),
     )
-    items = result.scalars().all()
+    result = await db.execute(
+        data_query.order_by(Sighting.observed_at.desc()).offset(skip).limit(limit)
+    )
+    rows = result.all()
 
     return PaginatedResponse(
-        items=[SightingRead.model_validate(s) for s in items],
+        items=[
+            SightingRead.model_validate(s).model_copy(update={"latitude": lat, "longitude": lng})
+            for s, lat, lng in rows
+        ],
         total=total,
         limit=limit,
         offset=skip,
@@ -72,9 +79,16 @@ async def get_nearby_sightings(
                 func.ST_GeogFromWKB(func.ST_SetSRID(point, 4326)),
             )
         )
+        .add_columns(
+            func.ST_Y(Sighting.geometry).label("latitude"),
+            func.ST_X(Sighting.geometry).label("longitude"),
+        )
         .limit(100)
     )
-    return [SightingRead.model_validate(s) for s in result.scalars().all()]
+    return [
+        SightingRead.model_validate(s).model_copy(update={"latitude": lat, "longitude": lng})
+        for s, lat, lng in result.all()
+    ]
 
 
 async def get_sighting_by_id(
@@ -90,11 +104,16 @@ async def get_sighting_by_id(
             selectinload(Sighting.species),
             selectinload(Sighting.user),
         )
+        .add_columns(
+            func.ST_Y(Sighting.geometry).label("latitude"),
+            func.ST_X(Sighting.geometry).label("longitude"),
+        )
     )
-    sighting = result.scalar_one_or_none()
-    if sighting is None:
+    row = result.one_or_none()
+    if row is None:
         raise HTTPException(status_code=404, detail="Sighting not found")
-    return SightingDetail.model_validate(sighting)
+    sighting, lat, lng = row
+    return SightingDetail.model_validate(sighting).model_copy(update={"latitude": lat, "longitude": lng})
 
 
 async def create_sighting(
