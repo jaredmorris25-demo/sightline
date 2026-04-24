@@ -5,6 +5,36 @@ Format: `## YYYY-MM-DD — Summary`
 
 ---
 
+## 2026-04-24 — Phase 4 CD pipeline complete
+
+### Completed
+- `.github/workflows/api-deploy.yml`: three-job CD pipeline on push to develop
+  - `test`: PostGIS service container, Alembic migrations, pytest (identical to CI)
+  - `build-and-push`: Azure login, ACR login, `docker buildx build --platform linux/amd64`,
+    tagged with both `github.sha` (immutable) and `latest`
+  - `deploy`: gated on GitHub Actions `dev` environment with required reviewer (manual
+    approval); updates Container App with SHA tag; smoke tests `/health` endpoint
+- Paths filter covers `api/**`, `api/Dockerfile.prod`, and the workflow file itself
+- Branch protection rules configured: main and develop both require PRs
+- Workflow file committed on `feature/cd-pipeline`, fix committed on `feature/fix-cd-trigger`
+
+### Key lessons
+- Apple Silicon (ARM64) builds push linux/arm64 images by default — Azure Container Apps
+  requires linux/amd64; must pass `--platform linux/amd64` to `docker buildx build`
+- Terraform state drift: resources created or modified via CLI (`az`) are not reflected
+  in state; subsequent `terraform apply` can conflict or recreate resources unexpectedly
+- Failed Container App provisioning recovery: delete via `az containerapp delete`, push
+  a valid amd64 image to ACR first, then re-run `terraform apply`
+- Branch protection on develop means direct pushes are rejected; all changes go through
+  feature branches and PRs
+
+### Notes
+- ADO migration flagged as future phase consideration — GitHub Actions sufficient for now
+- GitHub Actions `dev` environment must be created manually in repo Settings →
+  Environments before the approval gate activates
+
+---
+
 ## 2026-04-16 — Phase 4 Part A complete — Azure infrastructure live
 
 ### Completed
