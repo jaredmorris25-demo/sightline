@@ -5,6 +5,38 @@ Format: `## YYYY-MM-DD — Summary`
 
 ---
 
+## 2026-04-27 — Phase 4B partial — Azure AI Search integrated
+
+### Completed
+- Terraform: new infra/modules/search/ — azurerm_search_service (free SKU,
+  search-sightline-dev); endpoint + primary_key outputs wired into module "api"
+  as plain env var (AZURE_SEARCH_ENDPOINT) and Container App secret
+  (AZURE_SEARCH_API_KEY)
+- api/app/search/: sync SearchClient/SearchIndexClient factory (client.py),
+  species + sightings index schemas, document upsert helpers (indexes.py);
+  all blocking SDK calls wrapped in asyncio.to_thread
+- GET /v1/search/species and GET /v1/search/sightings endpoints with Lucene
+  fuzzy matching (q~, query_type="full") and OData filter support
+- Automatic DB ilike fallback when Azure credentials absent — API runs fully
+  without search configured
+- Startup lifespan calls create_indexes() (idempotent, create_or_update_index)
+- db/seed/backfill_search_index.py — batch-100 species backfill, 255/255
+  records indexed successfully on first run
+- Fuzzy search confirmed: q=kookaburaa returns Laughing Kookaburra
+
+### Bugs caught and fixed
+- azure.search.documents.aio (async client) has context manager and async
+  iterator issues in this SDK version — switched to sync client exclusively,
+  wrapped in asyncio.to_thread
+- Lucene ~ fuzzy operator requires query_type="full" — without it the tilde
+  is a literal character and matches nothing
+
+### Remaining Phase 4B
+- Heatmap data endpoint (spatial aggregation for web frontend)
+- Time-series sightings chart data endpoint
+
+---
+
 ## 2026-04-16 — Phase 4 Part A complete — Azure infrastructure live
 
 ### Completed

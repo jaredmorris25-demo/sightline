@@ -209,8 +209,6 @@ sightline/
 | 6 | Mobile app | Pending | React Native/Expo, camera, GPS, offline |
 
 **Phase 4B remaining:**
-- Azure AI Search index for species and sightings
-- Full-text + spatial search endpoint
 - Heatmap data endpoint for web frontend
 - Time-series sightings chart data
 
@@ -414,7 +412,7 @@ Local services:
 
 ## Current State (update this block each session)
 
-**Last updated:** 2026-04-24
+**Last updated:** 2026-04-27
 **Current phase:** Phase 4B — Search and discovery
 **Completed:**
   Phase 1: Repo, Docker Compose, FastAPI skeleton, Terraform bootstrap
@@ -424,14 +422,15 @@ Local services:
   Phase 4A: Azure infrastructure (ACR, PostgreSQL, Key Vault, Container Apps),
     CD pipeline (GitHub Actions, manual approval gate, smoke test),
     linux/amd64 build, branch protection, develop→main PR workflow
-**In progress:** Phase 4B planning
+  Phase 4B (partial): Azure AI Search — species and sightings indexes, fuzzy search
+    endpoints (GET /v1/search/species, GET /v1/search/sightings), DB ilike fallback,
+    Terraform search module, backfill script (255 species indexed)
+**In progress:** Phase 4B — heatmap and time-series chart data endpoints
 **Blocked by:** Nothing
 **Next actions:**
-  1. Provision Azure AI Search resource via Terraform
-  2. Build species + sightings search index
-  3. Add search endpoint to API
-  4. Heatmap data endpoint
-  5. ADO pipeline exploration (backlog — after Phase 4B)
+  1. Heatmap data endpoint (spatial aggregation of sightings for web frontend)
+  2. Time-series sightings chart data endpoint
+  3. ADO pipeline exploration (backlog — after Phase 4B)
 
 ---
 
@@ -483,14 +482,21 @@ Local services:
 - Next.js dev server must be started manually: cd web && npm run dev
 - DevOps deployments must remain manually triggered or manually approved — never
   fully automate away the deployment steps.
+- Azure AI Search fuzzy search requires both ~ suffix on query term AND
+  query_type="full" (Lucene syntax) — neither alone is sufficient. Without
+  query_type="full", the ~ is treated as a literal character.
+- Azure Search sync SDK (azure.search.documents) works correctly in async FastAPI
+  via asyncio.to_thread. The async client (azure.search.documents.aio) has
+  context manager and iterator issues — use sync client exclusively.
+- DATABASE_URL_SYNC is not in .env — pass via -e flag when running seed/backfill
+  scripts: postgresql://sightline:localdevonly@postgres:5432/sightline
 - When uncertain, add to Open Questions below and flag in your response
 
 ---
 
 ## Backlog / Future Ideas
 
-- Azure AI Search — species + sightings full-text and spatial search (Phase 4B — next)
-- Heatmaps and time-series charts on web frontend (Phase 4B)
+- Heatmaps and time-series charts on web frontend (Phase 4B — next)
 - ADO pipeline — replicate GitHub Actions CD in Azure DevOps as learning exercise
 - Prod/dev environment split — second Azure resource group when real users exist
 - Classroom mode UI: teacher dashboard with live class sightings map
