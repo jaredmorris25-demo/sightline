@@ -12,3 +12,5 @@ httpx
 pytest
 pytest-asyncio
 ruff
+azure-search-documents
+aiohttp

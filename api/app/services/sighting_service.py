@@ -1,11 +1,12 @@
 import uuid
 
 from fastapi import HTTPException
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.sighting import Sighting, Visibility
+from app.models.species import Species
 from app.schemas.common import PaginatedResponse
 from app.schemas.sighting import SightingCreate, SightingDetail, SightingRead
 
@@ -142,4 +143,86 @@ async def create_sighting(
     db.add(sighting)
     await db.commit()
     await db.refresh(sighting)
+
+    try:
+        from app.search.indexes import index_sighting
+        species_result = await db.execute(select(Species).where(Species.id == sighting.species_id))
+        species = species_result.scalar_one_or_none()
+        await index_sighting(sighting, species, payload.latitude, payload.longitude)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).warning("Search indexing failed for sighting %s", sighting.id, exc_info=True)
+
     return SightingRead.model_validate(sighting)
+
+
+async def get_sightings_by_ids(
+    db: AsyncSession,
+    sighting_ids: list[uuid.UUID],
+) -> list[SightingRead]:
+    """Fetch sightings by explicit ID list, preserving search relevance order."""
+    if not sighting_ids:
+        return []
+    result = await db.execute(
+        select(Sighting)
+        .where(
+            Sighting.id.in_(sighting_ids),
+            Sighting.visibility == Visibility.public,
+        )
+        .add_columns(
+            func.ST_Y(Sighting.geometry).label("latitude"),
+            func.ST_X(Sighting.geometry).label("longitude"),
+        )
+    )
+    rows = {str(s.id): (s, lat, lng) for s, lat, lng in result.all()}
+    # Return in search-result order (IDs came from Azure AI Search ranking)
+    return [
+        SightingRead.model_validate(rows[str(sid)][0]).model_copy(
+            update={"latitude": rows[str(sid)][1], "longitude": rows[str(sid)][2]}
+        )
+        for sid in sighting_ids
+        if str(sid) in rows
+    ]
+
+
+async def search_sightings_db(
+    db: AsyncSession,
+    *,
+    q: str | None = None,
+    visibility: Visibility = Visibility.public,
+    skip: int = 0,
+    limit: int = 20,
+) -> PaginatedResponse[SightingRead]:
+    """DB ilike fallback when Azure AI Search is unavailable."""
+    query = select(Sighting).where(Sighting.visibility == visibility)
+
+    if q:
+        pattern = f"%{q}%"
+        query = query.where(
+            or_(
+                Sighting.behaviour_notes.ilike(pattern),
+                Sighting.location_description.ilike(pattern),
+            )
+        )
+
+    count_result = await db.execute(select(func.count()).select_from(query.subquery()))
+    total = count_result.scalar_one()
+
+    data_query = query.add_columns(
+        func.ST_Y(Sighting.geometry).label("latitude"),
+        func.ST_X(Sighting.geometry).label("longitude"),
+    )
+    result = await db.execute(
+        data_query.order_by(Sighting.observed_at.desc()).offset(skip).limit(limit)
+    )
+    rows = result.all()
+
+    return PaginatedResponse(
+        items=[
+            SightingRead.model_validate(s).model_copy(update={"latitude": lat, "longitude": lng})
+            for s, lat, lng in rows
+        ],
+        total=total,
+        limit=limit,
+        offset=skip,
+    )
