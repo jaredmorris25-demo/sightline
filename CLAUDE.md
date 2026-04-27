@@ -20,7 +20,7 @@ API design, cloud infrastructure, spatial data, time-series, DevSecOps, and mobi
 
 **Owner:** Director, Data Engineering (government sector, Azure/Databricks background)
 **Horizon:** 12 months active development
-**Current Phase:** Phase 3 — Web frontend (in progress)
+**Current Phase:** Phase 4 Part B — Search and discovery features
 
 ---
 
@@ -84,15 +84,15 @@ API design, cloud infrastructure, spatial data, time-series, DevSecOps, and mobi
 | Database | PostgreSQL 16 + PostGIS | Azure Database for PostgreSQL Flexible Server |
 | Spatial ORM | GeoAlchemy2 | PostGIS geometry columns in SQLAlchemy |
 | Migrations | Alembic | All schema changes tracked |
-| Search | Azure AI Search | Phase 4 — not yet built |
+| Search | Azure AI Search | Phase 4B — next to build |
 | Media storage | Azure Blob Storage + CDN | Phase 5 — not yet built |
-| Auth | Auth0 | OAuth2/OIDC, RS256 JWT, social login — ACCEPTED ADR-001 |
+| Auth | Auth0 | OAuth2/OIDC, RS256 JWT, social login — ADR-001 |
 | Web frontend | Next.js 16.2.3 (App Router) | Auth0 v4, react-map-gl v8, Mapbox |
 | Mobile (Phase 6) | React Native / Expo | Same API, no backend changes needed |
 | Containers | Docker + Docker Compose | Local dev; prod on Azure Container Apps |
 | IaC | Terraform (AzureRM provider) | State in Azure Blob Storage |
-| CI/CD | GitHub Actions | lint + test on every push — ACTIVE |
-| Secrets | Azure Key Vault | Phase 2+ — not yet wired |
+| CI/CD | GitHub Actions | CI: lint+test on PR. CD: build+push+deploy on develop merge |
+| Secrets | Azure Key Vault | Provisioned, not yet fully wired to app |
 | Async / events | Azure Service Bus | Phase 5 — not yet built |
 | IDE | VSCode + Claude Code extension | |
 
@@ -126,7 +126,8 @@ sightline/
 │   │   ├── test_health.py
 │   │   ├── test_species.py
 │   │   └── test_auth.py
-│   ├── Dockerfile
+│   ├── Dockerfile              # Local dev (with --reload)
+│   ├── Dockerfile.prod         # Production (linux/amd64, 2 workers, no reload)
 │   ├── pytest.ini
 │   └── requirements.txt
 │
@@ -135,6 +136,7 @@ sightline/
 │   │   ├── app/
 │   │   │   ├── page.tsx        # Landing page — Mapbox map + sightings markers
 │   │   │   ├── layout.tsx      # Root layout, Auth0 session, user provisioning
+│   │   │   ├── submit/         # Submit a sighting form (auth required)
 │   │   │   ├── species/        # Species browser + detail pages
 │   │   │   └── api/auth/       # Auth0 route handlers
 │   │   ├── lib/
@@ -146,7 +148,17 @@ sightline/
 ├── mobile/                     # React Native / Expo (Phase 6)
 │
 ├── infra/                      # Terraform
-│   └── main.tf                 # Backend configured, provider installed
+│   ├── modules/
+│   │   ├── registry/           # Azure Container Registry
+│   │   ├── database/           # PostgreSQL Flexible Server + PostGIS
+│   │   ├── keyvault/           # Azure Key Vault
+│   │   └── api/                # Container Apps Environment + Container App
+│   └── environments/
+│       └── dev/
+│           ├── main.tf
+│           ├── variables.tf
+│           ├── terraform.tfvars      # gitignored — real values
+│           └── terraform.tfvars.example
 │
 ├── db/
 │   ├── alembic/
@@ -159,9 +171,9 @@ sightline/
 │
 ├── docs/
 │   ├── DEVLOG.md
+│   ├── COLD-START.md           # Cold start reference guide
 │   ├── PROJECT_BRIEF.md
 │   ├── adr/
-│   │   ├── 000-template.md
 │   │   ├── 001-auth-provider.md       # Auth0 — ACCEPTED
 │   │   ├── 002-repo-structure.md      # Monorepo — ACCEPTED
 │   │   ├── 003-offline-capture.md     # Device timestamps — ACCEPTED
@@ -170,7 +182,8 @@ sightline/
 │       └── schema.md
 │
 ├── .github/workflows/
-│   ├── api-ci.yml              # ACTIVE — lint + test on push
+│   ├── api-ci.yml              # CI — lint + test on PR to main/develop
+│   ├── api-deploy.yml          # CD — build + push + deploy on merge to develop
 │   ├── web-ci.yml              # Placeholder
 │   └── infra-plan.yml          # Placeholder
 │
@@ -189,19 +202,17 @@ sightline/
 |---|---|---|---|
 | 1 | Foundation | Complete | Repo, Docker Compose, FastAPI skeleton, Terraform bootstrap |
 | 2 | Core API | Complete | Models, migrations, endpoints, auth, seed data, CI |
-| 3 | Web frontend | In progress | Map live, species browser, auth working, submit form pending |
-| 4 | Search + discovery | Pending | Azure AI Search, spatial queries, heatmaps |
+| 3 | Web frontend | Complete | Map, species browser, submit form, Auth0 login |
+| 4A | Azure deployment | Complete | Container Apps, PostgreSQL, ACR, CD pipeline |
+| 4B | Search + discovery | In progress | Azure AI Search, spatial queries, heatmaps |
 | 5 | Async pipelines | Pending | Service Bus, media processing, Databricks |
 | 6 | Mobile app | Pending | React Native/Expo, camera, GPS, offline |
 
-**Current phase:** Phase 3 complete — moving to Phase 4
-**Completed:** Full Phase 3 — map, species browser, auth, user provisioning,
-  submit form, first real sighting confirmed end-to-end
-**Next actions:**
-  1. Deploy API to Azure Container Apps (unblocks mobile testing)
-  2. Azure Database for PostgreSQL Flexible Server
-  3. Azure AI Search for species/sightings discovery
-  4. Heatmaps and time-series on web frontend
+**Phase 4B remaining:**
+- Azure AI Search index for species and sightings
+- Full-text + spatial search endpoint
+- Heatmap data endpoint for web frontend
+- Time-series sightings chart data
 
 ---
 
@@ -221,7 +232,34 @@ GET  /v1/species/{species_id}         — public
 POST /v1/users/me                     — auth required, auto-provisions user
 ```
 
-Swagger UI: http://localhost:8000/docs
+Local Swagger UI: http://localhost:8000/docs
+Live API: https://ca-sightline-api.wittywave-8fb8cdba.australiaeast.azurecontainerapps.io
+
+---
+
+## CI/CD Pipeline
+
+### CI (api-ci.yml)
+Triggers on PR to main or develop for changes under api/**
+Jobs: lint (ruff), test (pytest with PostgreSQL service container)
+
+### CD (api-deploy.yml)
+Triggers on merge to develop for changes under api/** or workflow file
+Jobs:
+1. test — full pytest suite (automatic)
+2. build-and-push — builds linux/amd64 image, pushes to ACR with SHA + latest tags (automatic)
+3. deploy — requires manual approval via GitHub `dev` environment, then updates Container App + smoke test
+
+### GitHub Environments
+- `dev` — required reviewer: jaredmorris25-demo. Gates the deploy job.
+
+### GitHub Secrets required
+AZURE_CREDENTIALS, ACR_LOGIN_SERVER, ACR_USERNAME, ACR_PASSWORD,
+CONTAINER_APP_NAME, RESOURCE_GROUP
+
+### Branch protection
+- main — PR required, no direct push
+- develop — PR required, no direct push, no deletion
 
 ---
 
@@ -282,8 +320,25 @@ canonical_sighting_id (nullable fk → Sighting)
 - API audience: https://api.sightline.app
 - Algorithm: RS256
 - Scopes: read:sightings, write:sightings
-- Callback URLs registered: http://localhost:3000/api/auth/callback
-- Auth0 v4 for Next.js — breaking changes from v3, see Notes for Claude Code
+- Callback URLs: http://localhost:3000/api/auth/callback
+- Auth0 v4 for Next.js — see breaking changes in Notes for Claude Code
+
+---
+
+## Azure Resources
+
+| Resource | Name | Notes |
+|---|---|---|
+| Resource group | rg-sightline | australiaeast |
+| Container Registry | acrsightline.azurecr.io | Admin enabled |
+| PostgreSQL server | psql-sightline-dev | B1ms, PostGIS enabled |
+| Key Vault | kv-sightline-dev | Not yet wired to app |
+| Container Apps Env | cae-sightline-dev | |
+| Container App | ca-sightline-api | 0.5 CPU, 1Gi, min 1 replica |
+| TF state storage | stsightlinetfstate | tfstate container |
+
+Service Principal: sp-sightline-github-actions (clientId: be0d1334-87bd-407b-9440-43aa9afa0e82)
+NOTE: Credentials need rotating before production launch.
 
 ---
 
@@ -311,21 +366,11 @@ AUTH0_AUDIENCE=https://api.sightline.app
 NEXT_PUBLIC_API_URL=http://localhost:8000
 NEXT_PUBLIC_MAPBOX_TOKEN=
 
-# Azure Storage
+# Azure Storage (Phase 5)
 AZURE_STORAGE_ACCOUNT_NAME=
 AZURE_STORAGE_CONTAINER_SIGHTINGS=sightings-media
 AZURE_STORAGE_CONTAINER_INGEST=ingest-raw
 AZURE_CDN_ENDPOINT=
-
-# Azure Service Bus
-AZURE_SERVICEBUS_CONNECTION_STRING=
-AZURE_SERVICEBUS_QUEUE_MEDIA=media-processing
-
-# Azure AI Search
-AZURE_SEARCH_ENDPOINT=
-AZURE_SEARCH_API_KEY=
-AZURE_SEARCH_INDEX_SPECIES=species
-AZURE_SEARCH_INDEX_SIGHTINGS=sightings
 
 # App
 ENVIRONMENT=local
@@ -338,13 +383,17 @@ CORS_ORIGINS=http://localhost:3000
 ## Branching Strategy
 
 ```
-main        ← production-ready only, protected, requires PR
-develop     ← integration branch
-feature/*   ← feature branches off develop
+main        ← production-ready only, protected, requires PR, no direct push
+develop     ← integration branch, protected, requires PR, no direct push
+feature/*   ← temporary, branch off develop, delete after merge
 fix/*       ← bug fixes
 infra/*     ← terraform changes
 docs/*      ← documentation only
 ```
+
+Merge strategy:
+- feature/* → develop: squash and merge
+- develop → main: create merge commit (release marker)
 
 ---
 
@@ -353,43 +402,36 @@ docs/*      ← documentation only
 | Environment | Where | Purpose |
 |---|---|---|
 | local | macOS via Docker Compose + npm run dev | Day-to-day development |
-| dev | Azure | Auto-deployed from develop branch |
-| staging | Azure | Pre-prod validation |
-| prod | Azure | Live public environment |
+| Azure (dev/prod) | Azure Container Apps | Single environment for now |
 
-**Local services:**
+Local services:
 - PostgreSQL/PostGIS: localhost:5432 (Docker)
 - pgAdmin: http://localhost:5050 (Docker)
 - FastAPI: http://localhost:8000 (Docker, hot-reload)
-- Next.js: http://localhost:3000 (npm run dev — must be started manually)
-
-**Azure resources provisioned:**
-- Resource group: rg-sightline (australiaeast)
-- Storage account: stsightlinetfstate (Terraform state backend)
-- Blob container: tfstate
+- Next.js: http://localhost:3000 (npm run dev — start manually)
 
 ---
 
 ## Current State (update this block each session)
 
-**Last updated:** 2026-04-15
-**Current phase:** Phase 3 — Web frontend
+**Last updated:** 2026-04-24
+**Current phase:** Phase 4B — Search and discovery
 **Completed:**
   Phase 1: Repo, Docker Compose, FastAPI skeleton, Terraform bootstrap
-  Phase 2: SQLAlchemy models (8 entities), Alembic migration, Pydantic schemas,
-    species + sightings + users endpoints, Auth0 JWT middleware, get_or_create_user,
-    species seed (255 Australian species from ALA), GitHub Actions CI green
-  Phase 3 (partial): Next.js scaffold, Mapbox map, species browser, Auth0 login,
-    user auto-provisioning confirmed working end-to-end
-**In progress:** Phase 3 remaining items
+  Phase 2: SQLAlchemy models, Alembic migration, Pydantic schemas, endpoints,
+    Auth0 JWT, user provisioning, species seed (255 species), CI green
+  Phase 3: Next.js, Mapbox map, species browser, submit form, Auth0 login working
+  Phase 4A: Azure infrastructure (ACR, PostgreSQL, Key Vault, Container Apps),
+    CD pipeline (GitHub Actions, manual approval gate, smoke test),
+    linux/amd64 build, branch protection, develop→main PR workflow
+**In progress:** Phase 4B planning
 **Blocked by:** Nothing
 **Next actions:**
-  1. Fix duplicate Login button in nav
-  2. Build submit a sighting form (/submit)
-  3. Build group pages (/groups, /groups/[slug])
-  4. Connect map markers to real sightings data with popups
-  5. Commit and push all Phase 3 frontend work
-  6. Update CI to include web lint/build check
+  1. Provision Azure AI Search resource via Terraform
+  2. Build species + sightings search index
+  3. Add search endpoint to API
+  4. Heatmap data endpoint
+  5. ADO pipeline exploration (backlog — after Phase 4B)
 
 ---
 
@@ -418,50 +460,59 @@ docs/*      ← documentation only
 - All geometry columns use SRID 4326 (WGS84). PostGIS: ST_MakePoint(longitude, latitude)
   — longitude FIRST. All PostGIS function calls require func. prefix in SQLAlchemy.
 - Media.observed_at_device comes from EXIF — never overwrite after creation
-- Sighting.observed_at should be populated from Media.observed_at_device where available
 - All seed scripts and bulk inserts must use upsert patterns (ON CONFLICT DO NOTHING)
 - Router endpoints with write side-effects must call await db.commit() — db.flush() in
   services does not commit. Missing commit = silent rollback on request end.
 - Auth0 sessions created without audience parameter issue opaque tokens not JWTs.
   Always clear browser cookies and re-login after Auth0 config changes.
-- Auth0 v4 Next.js breaking changes from v3: AUTH0_DOMAIN not AUTH0_ISSUER_BASE_URL,
+- Auth0 v4 Next.js breaking changes: AUTH0_DOMAIN not AUTH0_ISSUER_BASE_URL,
   Auth0Provider renamed, proxy.ts not middleware.ts, react-map-gl/mapbox subpath
-  required, use client wrapper components for map (Turbopack disallows ssr:false in
-  server components)
+  required, use client wrapper for map component (Turbopack ssr:false restriction)
 - Alembic autogenerate picks up PostGIS system tables — include_object filter in
   db/alembic/env.py handles this. Never remove that filter.
 - PYTHONPATH must be set explicitly in CI (PYTHONPATH: .) and Docker exec
-  (PYTHONPATH=/app) — uvicorn sets it automatically but pytest does not.
-- Next.js dev server must be started manually with npm run dev from web/ directory.
-  It does not run as a Docker service. Use a dedicated terminal and keep it open.
+  (PYTHONPATH=/app)
+- Always build Docker images with --platform linux/amd64 for Azure Container Apps.
+  Apple Silicon (ARM64) builds will fail with platform mismatch error in Azure.
+- Use terraform apply not az containerapp update for config changes — CLI changes
+  cause state drift requiring manual recovery.
+- Terraform recovery sequence if Container App enters failed state:
+  1. terraform state rm module.api.azurerm_container_app.api
+  2. az containerapp delete --name ca-sightline-api --resource-group rg-sightline --yes
+  3. terraform apply
+- Next.js dev server must be started manually: cd web && npm run dev
+- DevOps deployments must remain manually triggered or manually approved — never
+  fully automate away the deployment steps.
 - When uncertain, add to Open Questions below and flag in your response
 
 ---
 
 ## Backlog / Future Ideas
 
-- Classroom mode UI: teacher dashboard with live class sightings map (Phase 3+)
-- Gamification: badges, streaks, leaderboards within a Group (Phase 3+)
-- Species ID from photo: Azure AI Vision or iNaturalist API (Phase 4-5)
-- Offline-first mobile: draft sightings locally, sync when online. See ADR-003 (Phase 6)
-- Public Darwin Core Archive export — GBIF-compatible bulk download (Phase 4+)
-- Databricks pipeline consuming sightings stream for population trend analytics (Phase 5)
-- Heatmaps and time-series charts on web frontend (Phase 4)
-- Push notifications for rare species near user's home location (Phase 6)
-- Organisation accounts with bulk ingest API key access (Phase 4+)
-- Two-way sync with ALA, eBird, iNaturalist (Phase 4+)
-- Moderation queue for curator role (Phase 3+)
-- Species seed: Vascular plants returns poor ALA data — investigate GBIF alternative
-- Species thumbnails from ALA thumbnailUrl + occurrence_count fields (future migration)
-- Fix duplicate Login button in nav (Phase 3 — next session)
-- Phase 5 task: Full ALA species taxonomy via GBIF Darwin Core Archive download — first real test of the three-layer ingest model.
+- Azure AI Search — species + sightings full-text and spatial search (Phase 4B — next)
+- Heatmaps and time-series charts on web frontend (Phase 4B)
+- ADO pipeline — replicate GitHub Actions CD in Azure DevOps as learning exercise
+- Prod/dev environment split — second Azure resource group when real users exist
+- Classroom mode UI: teacher dashboard with live class sightings map
+- Gamification: badges, streaks, leaderboards within a Group
+- Species ID from photo: Azure AI Vision or iNaturalist API
+- Offline-first mobile: draft sightings locally, sync when online. See ADR-003
+- Public Darwin Core Archive export — GBIF-compatible bulk download
+- Databricks pipeline consuming sightings stream for population trend analytics
+- Full ALA species taxonomy via GBIF Darwin Core Archive — first real test of
+  three-layer ingest model (Phase 5)
+- Species thumbnails from ALA thumbnailUrl + occurrence_count fields
+- Push notifications for rare species near user's home location
+- Two-way sync with ALA, eBird, iNaturalist
+- Moderation queue for curator role
+- Species seed: Vascular plants poor ALA data quality — investigate GBIF alternative
 
 ---
 
 ## Open Questions
 
-- [ ] Map provider for prod — Mapbox free tier sufficient for dev, evaluate at scale
+- [ ] Azure Key Vault — wire secrets to Container App via managed identity before prod
 - [ ] Domain name — check sightline.app / sightline.io availability
-- [ ] Web CI — activate web-ci.yml with Next.js build check on push
-- [ ] Azure Key Vault wiring — currently using .env files, migrate before prod deployment
-- [ ] Species seed: investigate correct ALA group name for Vascular plants data quality
+- [ ] Web CI — activate web-ci.yml with Next.js build check
+- [ ] Credential rotation — sp-sightline-github-actions and ACR password before prod
+- [ ] ADO migration timing — after Phase 4B complete

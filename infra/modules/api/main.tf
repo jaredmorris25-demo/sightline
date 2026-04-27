@@ -90,6 +90,11 @@ resource "azurerm_container_app" "api" {
     value = var.database_url
   }
 
+  secret {
+    name  = "azure-search-api-key"
+    value = var.azure_search_api_key
+  }
+
   template {
     min_replicas = 1
     max_replicas = 3
@@ -119,6 +124,14 @@ resource "azurerm_container_app" "api" {
       env {
         name  = "PYTHONPATH"
         value = "/app"
+      }
+      env {
+        name  = "AZURE_SEARCH_ENDPOINT"
+        value = var.azure_search_endpoint
+      }
+      env {
+        name        = "AZURE_SEARCH_API_KEY"
+        secret_name = "azure-search-api-key"
       }
     }
   }

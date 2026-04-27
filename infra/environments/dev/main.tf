@@ -55,6 +55,16 @@ module "keyvault" {
 }
 
 # ---------------------------------------------------------------------------
+# Azure AI Search
+# ---------------------------------------------------------------------------
+module "search" {
+  source = "../../modules/search"
+
+  resource_group_name = var.resource_group_name
+  location            = var.location
+}
+
+# ---------------------------------------------------------------------------
 # Container App (API)
 # DATABASE_URL assembled from database module outputs + password variable
 # ---------------------------------------------------------------------------
@@ -72,8 +82,10 @@ module "api" {
   acr_username        = module.registry.admin_username
   acr_password        = module.registry.admin_password
   database_url        = local.database_url
-  auth0_domain        = var.auth0_domain
-  auth0_api_audience  = var.auth0_api_audience
+  auth0_domain          = var.auth0_domain
+  auth0_api_audience    = var.auth0_api_audience
+  azure_search_endpoint = module.search.endpoint
+  azure_search_api_key  = module.search.primary_key
 }
 
 # ---------------------------------------------------------------------------
@@ -94,4 +106,14 @@ output "db_fqdn" {
 
 output "keyvault_uri" {
   value = module.keyvault.vault_uri
+}
+
+output "search_endpoint" {
+  value       = module.search.endpoint
+  description = "Azure AI Search service endpoint."
+}
+
+output "search_primary_key" {
+  value     = module.search.primary_key
+  sensitive = true
 }
