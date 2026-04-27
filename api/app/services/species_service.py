@@ -85,4 +85,12 @@ async def create_species(db: AsyncSession, payload: SpeciesCreate) -> SpeciesRea
     db.add(species)
     await db.commit()
     await db.refresh(species)
+
+    try:
+        from app.search.indexes import index_species
+        await index_species(species)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).warning("Search indexing failed for species %s", species.id, exc_info=True)
+
     return SpeciesRead.model_validate(species)

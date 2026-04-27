@@ -1,3 +1,7 @@
+import logging
+
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
@@ -5,10 +9,24 @@ from sqlalchemy import text
 from app.config import settings
 from app.db.session import AsyncSessionLocal
 
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    try:
+        from app.search.indexes import create_indexes
+        await create_indexes()
+    except Exception:
+        logger.warning("Search index creation failed on startup", exc_info=True)
+    yield
+
+
 app = FastAPI(
     title="Sightline API",
     version="0.1.0",
     description="Field observation platform API — biodiversity occurrence records.",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -21,11 +39,12 @@ app.add_middleware(
 
 # --- Domain routers — URI versioning prefix /v1/ (ADR-004) ---
 # Ops endpoints (/health, /ready) are intentionally unversioned
-from app.routers import sightings, species, users  # noqa: E402
+from app.routers import search, sightings, species, users  # noqa: E402
 
 app.include_router(species.router, prefix="/v1/species", tags=["species"])
 app.include_router(sightings.router, prefix="/v1/sightings", tags=["sightings"])
 app.include_router(users.router, prefix="/v1/users", tags=["users"])
+app.include_router(search.router, prefix="/v1/search", tags=["search"])
 
 # Routers added as they are built:
 # from app.routers import locations, groups, ingest
