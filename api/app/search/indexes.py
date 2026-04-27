@@ -2,7 +2,6 @@ import asyncio
 import logging
 
 from azure.search.documents.indexes.models import (
-    SearchField,
     SearchFieldDataType,
     SearchIndex,
     SearchableField,
