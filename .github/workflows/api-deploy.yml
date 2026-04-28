@@ -1,6 +1,6 @@
 name: API Deploy
 
-on:
+"on":
   push:
     branches: [develop]
     paths:
