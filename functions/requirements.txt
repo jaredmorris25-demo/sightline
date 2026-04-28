@@ -1,0 +1,5 @@
+azure-functions
+azure-storage-blob
+Pillow
+psycopg2-binary
+sqlalchemy

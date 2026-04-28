@@ -91,6 +91,9 @@ docker-compose.override.yml
 *.swp
 *.swo
 
+# ---- Azure Functions --------------------------------------------------------
+functions/local.settings.json
+
 # ---- Logs -------------------------------------------------------------------
 *.log
 logs/

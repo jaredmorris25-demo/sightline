@@ -89,6 +89,17 @@ module "api" {
 }
 
 # ---------------------------------------------------------------------------
+# Media pipeline (Phase 5A) — storage, CDN, Function App
+# ---------------------------------------------------------------------------
+module "media" {
+  source = "../../modules/media"
+
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  database_url        = local.database_url
+}
+
+# ---------------------------------------------------------------------------
 # Outputs
 # ---------------------------------------------------------------------------
 output "acr_login_server" {
@@ -116,4 +127,19 @@ output "search_endpoint" {
 output "search_primary_key" {
   value     = module.search.primary_key
   sensitive = true
+}
+
+output "cdn_endpoint" {
+  value       = module.media.cdn_endpoint_hostname
+  description = "CDN endpoint hostname for media delivery."
+}
+
+output "function_app_name" {
+  value       = module.media.function_app_name
+  description = "Name of the media processing Function App."
+}
+
+output "media_storage_account" {
+  value       = module.media.media_storage_account_name
+  description = "Name of the media blob storage account."
 }
