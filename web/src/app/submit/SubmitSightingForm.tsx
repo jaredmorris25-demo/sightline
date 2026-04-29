@@ -39,6 +39,10 @@ export default function SubmitSightingForm({ accessToken }: Props) {
   const [visibility, setVisibility] = useState<'public' | 'group' | 'private'>('public');
   const [locationDescription, setLocationDescription] = useState('');
 
+  // Photo
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
   // Submission state
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -109,6 +113,7 @@ export default function SubmitSightingForm({ accessToken }: Props) {
 
     setSubmitting(true);
     try {
+      // Step 1 — create the sighting
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/v1/sightings/`,
         {
@@ -124,6 +129,61 @@ export default function SubmitSightingForm({ accessToken }: Props) {
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body?.detail ?? `Server returned ${res.status}`);
+      }
+
+      const sighting = await res.json();
+
+      // Step 2 — photo upload (non-blocking: failure does not prevent redirect)
+      if (photoFile) {
+        setUploading(true);
+        try {
+          // 2a. Presign
+          const presignRes = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/v1/media/presign`,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                filename: photoFile.name,
+                content_type: photoFile.type,
+                sighting_id: sighting.id,
+              }),
+            }
+          );
+
+          if (!presignRes.ok) throw new Error(`Presign failed: ${presignRes.status}`);
+          const { media_id, upload_url } = await presignRes.json();
+
+          // 2b. PUT directly to Azure Blob Storage
+          const putRes = await fetch(upload_url, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': photoFile.type,
+              'x-ms-blob-type': 'BlockBlob',
+            },
+            body: photoFile,
+          });
+
+          if (!putRes.ok) throw new Error(`Storage PUT failed: ${putRes.status}`);
+
+          // 2c. Confirm upload
+          const confirmRes = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/v1/media/${media_id}/confirm`,
+            {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${accessToken}` },
+            }
+          );
+
+          if (!confirmRes.ok) throw new Error(`Confirm failed: ${confirmRes.status}`);
+        } catch (uploadErr) {
+          console.error('Photo upload failed (sighting saved):', uploadErr);
+        } finally {
+          setUploading(false);
+        }
       }
 
       router.push('/');
@@ -196,6 +256,18 @@ export default function SubmitSightingForm({ accessToken }: Props) {
             )}
           </>
         )}
+      </div>
+
+      {/* Photo (optional) */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Photo</label>
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/heic"
+          onChange={(e) => setPhotoFile(e.target.files?.[0] ?? null)}
+          className="block text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-medium file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+        />
+        <p className="mt-1 text-xs text-gray-400">Optional — JPEG, PNG or HEIC</p>
       </div>
 
       {/* Observed at */}
@@ -302,6 +374,11 @@ export default function SubmitSightingForm({ accessToken }: Props) {
           <option value="private">Private</option>
         </select>
       </div>
+
+      {/* Upload status */}
+      {uploading && (
+        <p className="text-sm text-gray-500">Uploading photo…</p>
+      )}
 
       {/* Error */}
       {error && (

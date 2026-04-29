@@ -495,6 +495,7 @@ Local services:
 - Heatmaps and time-series charts on web frontend (Phase 4B)
 - ADO pipeline — replicate GitHub Actions CD in Azure DevOps as learning exercise
 - Prod/dev environment split — second Azure resource group when real users exist
+- Phase 4/5 feature: "AI species identification from photo — Azure AI Vision or iNaturalist API, returns top 3 suggestions with confidence scores.
 - Classroom mode UI: teacher dashboard with live class sightings map
 - Gamification: badges, streaks, leaderboards within a Group
 - Species ID from photo: Azure AI Vision or iNaturalist API
@@ -510,6 +511,7 @@ Local services:
 - Species seed: Vascular plants poor ALA data quality — investigate GBIF alternative
 - Media processor: upload GPS-stripped version of original to media-private container for user's own access
 - infer timezone from GPS coordinates
+- Submit form: show success toast/message after sighting created, show error message on failure
 
 ---
 

@@ -86,6 +86,10 @@ module "api" {
   auth0_api_audience    = var.auth0_api_audience
   azure_search_endpoint = module.search.endpoint
   azure_search_api_key  = module.search.primary_key
+
+  azure_storage_connection_string   = module.media.media_storage_connection_string
+  azure_storage_container_raw       = "media-raw"
+  azure_storage_container_processed = "media-processed"
 }
 
 # ---------------------------------------------------------------------------

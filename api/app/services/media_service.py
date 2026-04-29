@@ -29,21 +29,27 @@ async def create_media_draft(
 ) -> Media:
     media_type = _CONTENT_TYPE_TO_MEDIA_TYPE[content_type]
 
-    # UUID is Python-generated — available immediately, no flush required.
+    # Generate UUID explicitly so it's available before the ORM flush.
+    media_id = uuid.uuid4()
+
+    # Derive account name from the connection string — no separate env var needed.
+    blob_service = BlobServiceClient.from_connection_string(settings.azure_storage_connection_string)
+    account_name = blob_service.account_name
+
+    blob_path = f"{media_id}/{filename}"
+    blob_url = (
+        f"https://{account_name}.blob.core.windows.net"
+        f"/{settings.azure_storage_container_raw}/{blob_path}"
+    )
+
     media = Media(
+        id=media_id,
         user_id=user_id,
         sighting_id=sighting_id,
         status=MediaStatus.draft,
         media_type=media_type,
         mime_type=content_type,
-    )
-
-    # Store the permanent blob URL (not the SAS URL) so confirm_upload knows
-    # exactly which blob to verify without re-deriving the path.
-    blob_path = f"{media.id}/{filename}"
-    media.blob_url = (
-        f"https://{settings.azure_storage_account_name}.blob.core.windows.net"
-        f"/{settings.azure_storage_container_raw}/{blob_path}"
+        blob_url=blob_url,
     )
 
     db.add(media)

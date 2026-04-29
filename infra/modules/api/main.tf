@@ -95,6 +95,11 @@ resource "azurerm_container_app" "api" {
     value = var.azure_search_api_key
   }
 
+  secret {
+    name  = "storage-connection"
+    value = var.azure_storage_connection_string
+  }
+
   template {
     min_replicas = 1
     max_replicas = 3
@@ -132,6 +137,18 @@ resource "azurerm_container_app" "api" {
       env {
         name        = "AZURE_SEARCH_API_KEY"
         secret_name = "azure-search-api-key"
+      }
+      env {
+        name        = "AZURE_STORAGE_CONNECTION_STRING"
+        secret_name = "storage-connection"
+      }
+      env {
+        name  = "AZURE_STORAGE_CONTAINER_RAW"
+        value = var.azure_storage_container_raw
+      }
+      env {
+        name  = "AZURE_STORAGE_CONTAINER_PROCESSED"
+        value = var.azure_storage_container_processed
       }
     }
   }

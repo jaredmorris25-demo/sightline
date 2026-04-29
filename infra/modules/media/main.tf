@@ -10,6 +10,16 @@ resource "azurerm_storage_account" "media" {
   account_replication_type        = "LRS"
   account_kind                    = "StorageV2"
   allow_nested_items_to_be_public = true
+
+  blob_properties {
+    cors_rule {
+      allowed_headers    = ["*"]
+      allowed_methods    = ["PUT", "GET", "HEAD", "OPTIONS"]
+      allowed_origins    = ["http://localhost:3000", "https://*.azurestaticapps.net"]
+      exposed_headers    = ["*"]
+      max_age_in_seconds = 3600
+    }
+  }
 }
 
 resource "azurerm_storage_container" "media_raw" {
