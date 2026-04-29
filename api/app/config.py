@@ -15,6 +15,9 @@ class Settings(BaseSettings):
 
     # Azure Storage
     azure_storage_account_name: str = ""
+    azure_storage_connection_string: str = ""
+    azure_storage_container_raw: str = "media-raw"
+    azure_storage_container_processed: str = "media-processed"
     azure_storage_container_sightings: str = "sightings-media"
     azure_storage_container_ingest: str = "ingest-raw"
     azure_cdn_endpoint: str = ""

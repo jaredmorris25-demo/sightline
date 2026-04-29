@@ -1,0 +1,12 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "",
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "MEDIA_STORAGE_CONNECTION": "",
+    "MEDIA_CONTAINER_RAW": "media-raw",
+    "MEDIA_CONTAINER_PROCESSED": "media-processed",
+    "DATABASE_URL": "",
+    "CDN_ENDPOINT": ""
+  }
+}

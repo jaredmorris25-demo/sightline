@@ -484,6 +484,8 @@ Local services:
 - DevOps deployments must remain manually triggered or manually approved — never
   fully automate away the deployment steps.
 - When uncertain, add to Open Questions below and flag in your response
+- Azure Functions on Consumption plan: use Python 3.11 not 3.12 — 
+  3.12 support is preview and has reliability issues
 
 ---
 
@@ -506,6 +508,8 @@ Local services:
 - Two-way sync with ALA, eBird, iNaturalist
 - Moderation queue for curator role
 - Species seed: Vascular plants poor ALA data quality — investigate GBIF alternative
+- Media processor: upload GPS-stripped version of original to media-private container for user's own access
+- infer timezone from GPS coordinates
 
 ---
 
