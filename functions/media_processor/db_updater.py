@@ -17,8 +17,12 @@ def update_media_record(
     gps_lng: float | None,
 ) -> None:
     # DATABASE_URL may be the asyncpg variant used by FastAPI — strip the driver
-    # suffix so SQLAlchemy uses the standard psycopg2 dialect here.
-    database_url = os.environ["DATABASE_URL"].replace("+asyncpg", "")
+    # suffix and convert asyncpg ssl param to psycopg2 sslmode param.
+    database_url = (
+        os.environ["DATABASE_URL"]
+        .replace("+asyncpg", "")
+        .replace("?ssl=require", "?sslmode=require")
+    )
     engine = create_engine(database_url)
 
     try:
@@ -28,7 +32,7 @@ def update_media_record(
                     UPDATE media SET
                         status             = 'ready',
                         cdn_url            = :cdn_url,
-                        exif_data          = :exif_data::jsonb,
+                        exif_data          = CAST(:exif_data AS jsonb),
                         observed_at_device = COALESCE(observed_at_device, :observed_at_device),
                         exif_lat           = :exif_lat,
                         exif_lng           = :exif_lng,
