@@ -20,7 +20,7 @@ API design, cloud infrastructure, spatial data, time-series, DevSecOps, and mobi
 
 **Owner:** Director, Data Engineering (government sector, Azure/Databricks background)
 **Horizon:** 12 months active development
-**Current Phase:** Phase 4 Part B — Search and discovery features
+**Current Phase:** Phase 5B — Async media processing
 
 ---
 
@@ -85,7 +85,7 @@ API design, cloud infrastructure, spatial data, time-series, DevSecOps, and mobi
 | Spatial ORM | GeoAlchemy2 | PostGIS geometry columns in SQLAlchemy |
 | Migrations | Alembic | All schema changes tracked |
 | Search | Azure AI Search | Phase 4B — next to build |
-| Media storage | Azure Blob Storage + CDN | Phase 5 — not yet built |
+| Media storage | Azure Blob Storage + Front Door CDN | Phase 5A — complete |
 | Auth | Auth0 | OAuth2/OIDC, RS256 JWT, social login — ADR-001 |
 | Web frontend | Next.js 16.2.3 (App Router) | Auth0 v4, react-map-gl v8, Mapbox |
 | Mobile (Phase 6) | React Native / Expo | Same API, no backend changes needed |
@@ -205,7 +205,8 @@ sightline/
 | 3 | Web frontend | Complete | Map, species browser, submit form, Auth0 login |
 | 4A | Azure deployment | Complete | Container Apps, PostgreSQL, ACR, CD pipeline |
 | 4B | Search + discovery | In progress | Azure AI Search, spatial queries, heatmaps |
-| 5 | Async pipelines | Pending | Service Bus, media processing, Databricks |
+| 5A | Media upload pipeline | Complete | Blob storage, Front Door CDN, Azure Function, Event Grid, EXIF extraction, thumbnail, GPS strip, photo upload in web form |
+| 5B | Async pipelines | Pending | Service Bus, advanced media processing, Databricks |
 | 6 | Mobile app | Pending | React Native/Expo, camera, GPS, offline |
 
 **Phase 4B remaining:**
@@ -414,8 +415,8 @@ Local services:
 
 ## Current State (update this block each session)
 
-**Last updated:** 2026-04-24
-**Current phase:** Phase 4B — Search and discovery
+**Last updated:** 2026-04-29
+**Current phase:** Phase 5B — Async media processing
 **Completed:**
   Phase 1: Repo, Docker Compose, FastAPI skeleton, Terraform bootstrap
   Phase 2: SQLAlchemy models, Alembic migration, Pydantic schemas, endpoints,
@@ -424,14 +425,20 @@ Local services:
   Phase 4A: Azure infrastructure (ACR, PostgreSQL, Key Vault, Container Apps),
     CD pipeline (GitHub Actions, manual approval gate, smoke test),
     linux/amd64 build, branch protection, develop→main PR workflow
-**In progress:** Phase 4B planning
+  Phase 4B: Azure AI Search integration — species and sightings indexes,
+    full-text + spatial search endpoint, search router
+  Phase 5A: Media upload pipeline — blob storage (stsightlinemedia), Front Door CDN,
+    Azure Function (Event Grid trigger, EXIF extraction, thumbnail generation,
+    GPS strip, DB update), presign/confirm/poll API endpoints, CORS on storage,
+    photo upload wired into submit form, full pipeline tested end-to-end in Azure
+**In progress:** Phase 5B planning
 **Blocked by:** Nothing
 **Next actions:**
-  1. Provision Azure AI Search resource via Terraform
-  2. Build species + sightings search index
-  3. Add search endpoint to API
-  4. Heatmap data endpoint
-  5. ADO pipeline exploration (backlog — after Phase 4B)
+  1. Service Bus integration for async media processing
+  2. Heatmap data endpoint for web frontend (Phase 4B remainder)
+  3. Time-series sightings chart data (Phase 4B remainder)
+  4. Databricks pipeline for sightings analytics (Phase 5B)
+  5. ADO pipeline exploration (backlog)
 
 ---
 
@@ -486,6 +493,22 @@ Local services:
 - When uncertain, add to Open Questions below and flag in your response
 - Azure Functions on Consumption plan: use Python 3.11 not 3.12 — 
   3.12 support is preview and has reliability issues
+- Azure Functions on Linux Consumption plan require remote build (Oryx) to install
+  Python dependencies — local zip deploy only copies files, packages are not installed.
+  Always deploy with: az functionapp deployment source config-zip --build-remote true
+- Azure Function Event Grid trigger requires extension bundle in host.json:
+  extensionBundle id=Microsoft.Azure.Functions.ExtensionBundle version=[3.*, 4.0.0)
+- functions/media_processor/db_updater.py: DATABASE_URL needs both +asyncpg removed
+  AND ?ssl=require replaced with ?sslmode=require for psycopg2 compatibility
+- Media service: generate UUID explicitly before Media() construction —
+  SQLAlchemy column defaults (default=uuid.uuid4) fire on flush, not instantiation.
+  media.id is None until flush if UUID is not passed explicitly.
+- Azure Function deployment is separate from the API CD pipeline — deploy manually
+  from the functions/ directory using:
+  az functionapp deployment source config-zip --build-remote true
+  Never assume API deployment also deploys the Function.
+- NEXT_PUBLIC_API_URL in web/.env.local — the Azure Container App URL is commented
+  out for easy switching during local vs Azure testing. Uncomment to point at Azure.
 
 ---
 

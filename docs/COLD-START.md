@@ -1,7 +1,7 @@
 # Sightline — Cold Start Reference
 
 > Keep this file up to date as new services, infrastructure, and apps are added.
-> Last updated: 2026-04-28
+> Last updated: 2026-04-29
 
 ---
 
@@ -74,7 +74,11 @@ AUTH0_CLIENT_SECRET=<Auth0 dashboard → Applications → Sightline Web → Sett
 AUTH0_AUDIENCE=https://api.sightline.app
 NEXT_PUBLIC_API_URL=http://localhost:8000
 NEXT_PUBLIC_MAPBOX_TOKEN=<https://account.mapbox.com → Access tokens>
+# NEXT_PUBLIC_API_URL=https://ca-sightline-api.wittywave-8fb8cdba.australiaeast.azurecontainerapps.io
 ```
+
+The Azure URL is kept as a comment for easy switching during local vs Azure testing.
+Uncomment the Azure line (and comment out the localhost line) to point the frontend at the live API.
 
 #### Install web dependencies
 
@@ -465,6 +469,7 @@ Note: Use PostgreSQL `LIMIT` syntax, not SQL Server `TOP` syntax.
 | Media storage account | stsightlinemedia |
 | CDN endpoint | cdnep-sightline-media-drcgcxdph5bjceh8.z02.azurefd.net |
 | Function App | func-sightline-media (Python 3.11) |
+| Event Grid subscription | evgs-sightline-media-raw (BlobCreated on media-raw → func-sightline-media) |
 | Application Insights | appi-sightline-dev |
 | Terraform state | stsightlinetfstate / container: tfstate / key: dev.terraform.tfstate |
 
@@ -599,9 +604,38 @@ docker compose exec \
 
 ---
 
-### Media pipeline
+### Deploy Azure Function (manual — separate from API CD pipeline)
 
-Media processing pipeline — Phase 5A. See `docs/adr/` for design decisions.
+The Function App is not part of the GitHub Actions CD pipeline. Deploy manually
+from the `functions/` directory. Remote build is required — Consumption plan does
+not install packages from a plain zip upload.
+
+```bash
+cd ~/sightline/functions
+zip -r /tmp/functions.zip . -x '*.pyc' -x '__pycache__/*' -x 'local.settings.json'
+az functionapp deployment source config-zip \
+  --name func-sightline-media \
+  --resource-group rg-sightline \
+  --src /tmp/functions.zip \
+  --build-remote true
+```
+
+After deploy, verify the function is registered:
+```bash
+az functionapp function list \
+  --name func-sightline-media \
+  --resource-group rg-sightline \
+  --output table
+```
+
+Expected: `media_processor` listed with `IsDisabled = False`.
+
+Deployment takes ~4–5 minutes (Oryx pip install runs server-side).
+If deployment fails with SCM container restart error, restart the app and retry:
+```bash
+az functionapp restart --name func-sightline-media --resource-group rg-sightline
+# Wait ~30 seconds, then re-run the config-zip command
+```
 
 ---
 

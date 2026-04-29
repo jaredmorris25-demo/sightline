@@ -5,6 +5,51 @@ Format: `## YYYY-MM-DD — Summary`
 
 ---
 
+## 2026-04-29 — Phase 5A Complete — Media Upload Pipeline
+
+### Completed
+- Azure Function `func-sightline-media`: Event Grid trigger on `media-raw` container,
+  EXIF extraction (DateTimeOriginal, GPS IFD via Pillow), thumbnail generation (400px,
+  LANCZOS, JPEG 85%), GPS strip from processed copy, DB update (status=ready, cdn_url,
+  exif_lat/lng, observed_at_device via COALESCE to respect ADR-003 immutability)
+- Presign / confirm / poll API endpoints (`POST /v1/media/presign`,
+  `POST /v1/media/{id}/confirm`, `GET /v1/media/{id}`)
+- CORS rule on `stsightlinemedia` blob storage — allows PUT from localhost:3000
+  and `*.azurestaticapps.net` for future Static Web App deployment
+- Front Door CDN endpoint provisioned (`cdnep-sightline-media-*.azurefd.net`)
+- Photo upload wired into submit form: file input → presign → PUT to Azure →
+  confirm. Non-blocking — sighting succeeds even if photo upload fails.
+- Full pipeline tested end-to-end in Azure using real Samsung Galaxy S24+ photo:
+  Event Grid triggered, EXIF extracted, thumbnail uploaded to media-processed,
+  DB record updated to `status=ready` with CDN URL and GPS coordinates populated.
+
+### Key lessons learned
+- **Remote build required**: Linux Consumption plan does not install pip packages
+  during zip deploy — must use `--build-remote true` (Oryx). Local-only zip copies
+  files but leaves packages uninstalled, causing silent import failures at runtime.
+- **Extension bundle required**: Event Grid trigger silently fails without
+  `extensionBundle` in `host.json`. Added `Microsoft.Azure.Functions.ExtensionBundle`
+  version `[3.*, 4.0.0)`.
+- **ssl vs sslmode**: asyncpg uses `?ssl=require`; psycopg2 requires `?sslmode=require`.
+  Both replacements needed: `.replace("+asyncpg", "").replace("?ssl=require", "?sslmode=require")`.
+- **SQLAlchemy UUID defaults**: `default=uuid.uuid4` fires on flush, not on model
+  instantiation — `media.id` is `None` immediately after `Media(...)`. UUID must be
+  generated explicitly and passed as `id=media_id`.
+- **`::jsonb` cast conflicts with SQLAlchemy bind params**: `:param::jsonb` is parsed
+  as a malformed parameter name. Use `CAST(:param AS jsonb)` instead.
+- **Function deployment is separate from API CD pipeline**: must be deployed manually
+  from `functions/` using `az functionapp deployment source config-zip --build-remote true`.
+
+### Bugs fixed
+- `media_service.py`: `settings.azure_storage_account_name` was empty (env var never
+  set) — fixed by deriving account name from connection string via BlobServiceClient
+- `media_service.py`: `media.id` was None at blob path construction — fixed with
+  explicit `uuid.uuid4()` before `Media()` instantiation
+- `db_updater.py`: `invalid connection option "ssl"` — fixed ssl→sslmode
+- `db_updater.py`: `syntax error at ":"` — fixed `::jsonb` → `CAST AS jsonb`
+
+---
+
 ## 2026-04-16 — Phase 4 Part A complete — Azure infrastructure live
 
 ### Completed
