@@ -10,3 +10,19 @@ variable "azure_search_api_key" {
   description = "Azure AI Search admin API key."
   default     = ""
 }
+
+variable "azure_storage_connection_string" {
+  type      = string
+  sensitive = true
+  default   = ""
+}
+
+variable "azure_storage_container_raw" {
+  type    = string
+  default = "media-raw"
+}
+
+variable "azure_storage_container_processed" {
+  type    = string
+  default = "media-processed"
+}
