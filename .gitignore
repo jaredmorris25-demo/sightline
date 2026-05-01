@@ -94,6 +94,10 @@ docker-compose.override.yml
 # ---- Azure Functions --------------------------------------------------------
 functions/local.settings.json
 
+# ---- Mobile (Expo) ----------------------------------------------------------
+mobile/.env
+mobile/node_modules/
+
 # ---- Logs -------------------------------------------------------------------
 *.log
 logs/
