@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.user_context import get_current_user_id
 from app.db.session import get_db
 from app.schemas.common import PaginatedResponse
-from app.schemas.sighting import SightingCreate, SightingDetail, SightingRead
+from app.schemas.sighting import SightingCreate, SightingDetail, SightingMapItem, SightingRead
 from app.services import sighting_service
 
 router = APIRouter()
@@ -44,6 +44,14 @@ async def nearby_sightings(
         longitude=longitude,
         radius_km=radius_km,
     )
+
+
+@router.get("/map", response_model=list[SightingMapItem])
+async def map_sightings(
+    limit: int = Query(500, ge=1, le=2000),
+    db: AsyncSession = Depends(get_db),
+):
+    return await sighting_service.get_sightings_map(db, limit=limit)
 
 
 @router.get("/{sighting_id}", response_model=SightingDetail)

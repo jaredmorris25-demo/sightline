@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 from app.models.sighting import Sighting, Visibility
 from app.models.species import Species
 from app.schemas.common import PaginatedResponse
-from app.schemas.sighting import SightingCreate, SightingDetail, SightingRead
+from app.schemas.sighting import SightingCreate, SightingDetail, SightingMapItem, SightingRead
 
 
 async def get_sightings_list(
@@ -50,6 +50,27 @@ async def get_sightings_list(
         limit=limit,
         offset=skip,
     )
+
+
+async def get_sightings_map(
+    db: AsyncSession,
+    *,
+    limit: int = 500,
+) -> list[SightingMapItem]:
+    result = await db.execute(
+        select(
+            Sighting.id,
+            func.ST_Y(Sighting.geometry).label("latitude"),
+            func.ST_X(Sighting.geometry).label("longitude"),
+            Species.common_name.label("species_common_name"),
+            Sighting.observed_at,
+        )
+        .join(Species, Sighting.species_id == Species.id)
+        .where(Sighting.visibility == Visibility.public)
+        .order_by(Sighting.observed_at.desc())
+        .limit(limit)
+    )
+    return [SightingMapItem(**row._mapping) for row in result.all()]
 
 
 async def get_nearby_sightings(
