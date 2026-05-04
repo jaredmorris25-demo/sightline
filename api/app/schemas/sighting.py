@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.models.sighting import Visibility
 from app.schemas.species import SpeciesSummary
@@ -63,3 +63,14 @@ class SightingDetail(SightingRead):
     user: UserPublic | None = None
 
     model_config = {"from_attributes": True}
+
+
+class SightingMapItem(BaseModel):
+    """Lightweight sighting payload for map views — coords + species name only."""
+    id: uuid.UUID
+    latitude: float
+    longitude: float
+    species_common_name: str | None
+    observed_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
