@@ -22,7 +22,7 @@ export default function SpeciesScreen() {
   const [selected, setSelected] = useState<Species | null>(null)
 
   useEffect(() => {
-    apiClient.get('/v1/species/', { params: { limit: 300 } })
+    apiClient.get('/v1/species/', { params: { limit: 255 } })
       .then(res => {
         setSpecies(res.data.items)
         setFiltered(res.data.items)
