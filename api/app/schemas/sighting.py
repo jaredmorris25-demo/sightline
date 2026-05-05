@@ -71,6 +71,7 @@ class SightingMapItem(BaseModel):
     latitude: float
     longitude: float
     species_common_name: str | None
+    species_scientific_name: str | None
     observed_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

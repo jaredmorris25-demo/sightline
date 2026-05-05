@@ -63,6 +63,7 @@ async def get_sightings_map(
             func.ST_Y(Sighting.geometry).label("latitude"),
             func.ST_X(Sighting.geometry).label("longitude"),
             Species.common_name.label("species_common_name"),
+            Species.scientific_name.label("species_scientific_name"),
             Sighting.observed_at,
         )
         .join(Species, Sighting.species_id == Species.id)
