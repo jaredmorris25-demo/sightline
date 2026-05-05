@@ -8,7 +8,8 @@ interface Sighting {
   id: string
   latitude: number
   longitude: number
-  species_common_name: string
+  species_common_name: string | null
+  species_scientific_name: string | null
   observed_at: string
 }
 
@@ -38,6 +39,7 @@ export default function MapScreen() {
       try {
         const res = await apiClient.get('/v1/sightings/map', { params: { limit: 500 } })
         setSightings(res.data.filter((s: Sighting) => s.latitude && s.longitude))
+        console.log('First sighting:', JSON.stringify(res.data[0]))
       } catch (e) {
         setError('Failed to load sightings')
       } finally {
@@ -73,9 +75,11 @@ export default function MapScreen() {
             coordinate={{ latitude: s.latitude, longitude: s.longitude }}
             pinColor="#2d6a4f"
           >
-            <Callout>
+            <Callout tooltip={false}>
               <View style={styles.callout}>
-                <Text style={styles.calloutTitle}>{s.species_common_name || 'Unknown species'}</Text>
+                <Text style={styles.calloutTitle}>
+                  {s.species_common_name ?? s.species_scientific_name ?? 'Unknown species'}
+                </Text>
                 <Text style={styles.calloutDate}>
                   {new Date(s.observed_at).toLocaleDateString('en-AU')}
                 </Text>
@@ -94,8 +98,21 @@ const styles = StyleSheet.create({
   map: { flex: 1 },
   centre: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   loadingText: { marginTop: 12, color: '#555' },
-  callout: { padding: 8, minWidth: 150 },
-  calloutTitle: { fontWeight: '600', fontSize: 14 },
-  calloutDate: { color: '#666', fontSize: 12, marginTop: 4 },
+  callout: {
+    width: 180,
+    padding: 8,
+    backgroundColor: 'white',
+    borderRadius: 6,
+  },
+  calloutTitle: {
+    fontWeight: '600',
+    fontSize: 14,
+    color: '#1a1a1a',
+  },
+  calloutDate: {
+    color: '#666',
+    fontSize: 12,
+    marginTop: 4,
+  },
   error: { position: 'absolute', bottom: 20, alignSelf: 'center', color: 'red' },
 })

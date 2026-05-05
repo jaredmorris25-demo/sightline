@@ -66,11 +66,12 @@ class SightingDetail(SightingRead):
 
 
 class SightingMapItem(BaseModel):
-    """Lightweight sighting payload for map views — coords + species name only."""
+    """Lightweight sighting payload for map views — coords + species names only."""
     id: uuid.UUID
     latitude: float
     longitude: float
     species_common_name: str | None
+    species_scientific_name: str | None
     observed_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
