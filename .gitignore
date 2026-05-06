@@ -95,7 +95,6 @@ docker-compose.override.yml
 functions/local.settings.json
 
 # ---- Mobile (Expo) ----------------------------------------------------------
-mobile/.env
 mobile/node_modules/
 
 # ---- Logs -------------------------------------------------------------------
