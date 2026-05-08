@@ -1,8 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import * as AuthSession from 'expo-auth-session'
-import { useAuthRequest } from 'expo-auth-session/providers/auth0'
+import * as WebBrowser from 'expo-web-browser'
 import { setAuthToken } from './api'
 import { AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_AUDIENCE, AUTH0_SCOPE, redirectUri } from './auth'
+
+WebBrowser.maybeCompleteAuthSession()
 
 interface User {
   sub?: string
@@ -33,14 +35,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const [request, response, promptAsync] = useAuthRequest(
+  const discovery = AuthSession.useAutoDiscovery(`https://${AUTH0_DOMAIN}`)
+
+  const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
       clientId: AUTH0_CLIENT_ID,
       scopes: AUTH0_SCOPE.split(' '),
       redirectUri,
       extraParams: { audience: AUTH0_AUDIENCE },
     },
-    { domain: AUTH0_DOMAIN }
+    discovery
   )
 
   useEffect(() => {
