@@ -6,7 +6,7 @@ export default function RootLayout() {
     <AuthProvider>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="login" options={{ title: 'Sign In' }} />
+        <Stack.Screen name="callback" options={{ headerShown: false }} />
       </Stack>
     </AuthProvider>
   )
