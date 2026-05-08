@@ -78,6 +78,20 @@ def main() -> None:
     total = len(rows)
     log.info("Fetched %d species from database", total)
 
+    # Delete all existing index documents before reindexing — prevents stale
+    # entries from lingering when local UUIDs differ from the target environment.
+    log.info("Clearing existing documents from index '%s'...", AZURE_SEARCH_INDEX_SPECIES)
+    deleted_total = 0
+    while True:
+        existing = list(client.search(search_text="*", select=["id"], top=1000))
+        if not existing:
+            break
+        delete_result = client.delete_documents([{"id": doc["id"]} for doc in existing])
+        deleted = sum(1 for r in delete_result if r.succeeded)
+        deleted_total += deleted
+        log.info("Deleted %d documents...", deleted_total)
+    log.info("Index cleared — %d documents removed", deleted_total)
+
     indexed = 0
     for batch_start in range(0, total, BATCH_SIZE):
         batch = rows[batch_start: batch_start + BATCH_SIZE]

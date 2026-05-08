@@ -25,7 +25,12 @@ export default function SubmitScreen() {
   const [selectedSpecies, setSelectedSpecies] = useState<SpeciesSuggestion | null>(null)
   const [latitude, setLatitude] = useState('')
   const [longitude, setLongitude] = useState('')
-  const [observedAt, setObservedAt] = useState(new Date().toISOString().slice(0, 16))
+  const localISOString = () => {
+    const now = new Date()
+    const offset = now.getTimezoneOffset() * 60000
+    return new Date(now.getTime() - offset).toISOString().slice(0, 16)
+  }
+  const [observedAt, setObservedAt] = useState(localISOString())
   const [count, setCount] = useState('1')
   const [behaviourNotes, setBehaviourNotes] = useState('')
   const [visibility, setVisibility] = useState<'public' | 'private'>('public')
@@ -118,7 +123,13 @@ export default function SubmitScreen() {
 
       router.replace('/(tabs)')
     } catch (err: any) {
-      setError(err?.response?.data?.detail ?? 'Submission failed')
+      console.error('Submit error:', JSON.stringify(err?.response?.data))
+      const detail = err?.response?.data?.detail
+      if (Array.isArray(detail)) {
+        setError(detail.map((d: any) => d.msg).join(', '))
+      } else {
+        setError(detail ?? 'Submission failed')
+      }
     } finally {
       setSubmitting(false)
     }
